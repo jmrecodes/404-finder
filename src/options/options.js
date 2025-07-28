@@ -1,5 +1,5 @@
 /*
- * 404 Finder - Auto-Search Redirector
+ * 404 Finder: Auto-Search Redirector
  * Copyright (C) 2025 by John Moremm L. Abuyabor
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-// JavaScript for 404 Finder Options
+// JavaScript for 404 Finder: Auto-Search Redirector Options
 
 /**
  * Load settings from Chrome storage and populate the UI

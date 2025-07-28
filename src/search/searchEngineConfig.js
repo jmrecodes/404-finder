@@ -1,5 +1,5 @@
 /*
- * 404 Finder - Auto-Search Redirector
+ * 404 Finder: Auto-Search Redirector
  * Copyright (C) 2025 by John Moremm L. Abuyabor
  *
  * This program is free software: you can redistribute it and/or modify
@@ -190,6 +190,81 @@ export const QUERY_TEMPLATES = {
 };
 
 /**
+ * Clean and decode a URL-encoded string
+ * 
+ * @param {string} str - The string to clean
+ * @returns {string} Cleaned string
+ */
+function cleanUrlString(str) {
+    try {
+        // Decode URL encoding (handles %20, %2C, etc.)
+        let decoded = decodeURIComponent(str);
+        
+        // Replace common URL separators with spaces
+        decoded = decoded.replace(/[\-_+]/g, ' ');
+        
+        // Remove multiple spaces
+        decoded = decoded.replace(/\s+/g, ' ');
+        
+        // Trim whitespace
+        return decoded.trim();
+    } catch (e) {
+        // If decoding fails, return original string cleaned
+        return str.replace(/[\-_+]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+}
+
+/**
+ * Extract meaningful keywords from text, prioritizing quality over quantity
+ * 
+ * @param {string} text - The text to extract keywords from
+ * @param {Array} stopWords - Words to exclude
+ * @returns {Array} Array of keywords
+ */
+function extractMeaningfulKeywords(text, stopWords = []) {
+    if (!text) return [];
+    
+    // Common stop words to filter out
+    const defaultStopWords = [
+        'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
+        'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
+        'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
+        'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their',
+        'what', 'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go',
+        'me', 'when', 'make', 'can', 'like', 'time', 'no', 'just', 'him', 'know',
+        'take', 'people', 'into', 'year', 'your', 'good', 'some', 'could', 'them',
+        'see', 'other', 'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over',
+        'think', 'also', 'back', 'after', 'use', 'two', 'how', 'our', 'work',
+        'first', 'well', 'way', 'even', 'new', 'want', 'because', 'any', 'these',
+        'give', 'day', 'most', 'us', 'is', 'was', 'are', 'been', 'has', 'had',
+        'were', 'been', 'have', 'their', 'said', 'each', 'she', 'which', 'do',
+        'www', 'com', 'org', 'net', 'html', 'htm', 'php', 'asp', 'jsp'
+    ];
+    
+    const allStopWords = new Set([...defaultStopWords, ...stopWords]);
+    
+    // Split text into words and clean them
+    const words = text
+        .toLowerCase()
+        .split(/[\s\-_\|:\/\.\,\;\!\?\(\)\[\]\{\}"']+/)
+        .map(word => word.trim())
+        .filter(word => {
+            // Keep words that are:
+            // - Longer than 2 characters
+            // - Not just numbers
+            // - Not in stop words
+            // - Not empty
+            return word.length > 2 && 
+                   !/^\d+$/.test(word) && 
+                   !allStopWords.has(word) &&
+                   word !== '';
+        });
+    
+    // Remove duplicates while preserving order
+    return [...new Set(words)];
+}
+
+/**
  * Extract information from a URL for search query construction
  * 
  * @param {string} url - The failed URL
@@ -211,30 +286,53 @@ export function extractUrlInfo(url, pageTitle = '') {
         // Extract domain name without extension (e.g., 'google' from 'google.com')
         const domainName = domainParts.length >= 2 ? domainParts[domainParts.length - 2] : domainParts[0] || '';
         
-        // Extract keywords from path
-        const pathKeywords = urlObj.pathname
-            .split(/[\/\-_\.]/)
-            .filter(word => word.length > 0 && word !== '') // Include all non-empty segments
-            .map(word => word.toLowerCase());
+        // Clean and decode the pathname
+        const cleanedPath = cleanUrlString(urlObj.pathname);
         
-        // Extract keywords from query parameters
+        // Extract keywords from cleaned path
+        const pathKeywords = extractMeaningfulKeywords(cleanedPath);
+        
+        // Extract and clean keywords from query parameters
         const queryKeywords = [];
         urlObj.searchParams.forEach((value, key) => {
-            if (key.length > 2) queryKeywords.push(key);
-            if (value.length > 2 && !/^\d+$/.test(value)) {
-                queryKeywords.push(value);
-            }
+            // Clean both key and value
+            const cleanKey = cleanUrlString(key);
+            const cleanValue = cleanUrlString(value);
+            
+            // Extract meaningful keywords from both
+            queryKeywords.push(...extractMeaningfulKeywords(cleanKey));
+            queryKeywords.push(...extractMeaningfulKeywords(cleanValue));
         });
         
-        // Extract keywords from title, filtering out common error page words
-        const errorWords = ['404', 'not', 'found', 'error', 'page', 'cannot', 'exist', 'available'];
-        const titleKeywords = pageTitle
-            .split(/[\s\-_\|:]/)
-            .filter(word => word.length > 2 && !/^\d+$/.test(word) && !errorWords.includes(word.toLowerCase()))
-            .map(word => word.toLowerCase());
+        // Error-related words to exclude from title
+        const errorWords = ['404', 'not', 'found', 'error', 'page', 'cannot', 'exist', 'available', 'blocked', 'denied'];
         
-        // Combine and deduplicate keywords
-        const allKeywords = [...new Set([...pathKeywords, ...queryKeywords, ...titleKeywords])];
+        // Clean and extract keywords from title
+        const cleanedTitle = cleanUrlString(pageTitle);
+        const titleKeywords = extractMeaningfulKeywords(cleanedTitle, errorWords);
+        
+        // Smart keyword prioritization
+        // 1. Title keywords are often most relevant
+        // 2. Path keywords are second priority  
+        // 3. Query parameters are third priority
+        const prioritizedKeywords = [];
+        
+        // Add domain name if it's meaningful (not in common words)
+        if (domainName && domainName.length > 3 && domainName !== 'www') {
+            prioritizedKeywords.push(domainName);
+        }
+        
+        // Add title keywords first (most relevant)
+        prioritizedKeywords.push(...titleKeywords.slice(0, 3));
+        
+        // Add path keywords
+        prioritizedKeywords.push(...pathKeywords.slice(0, 2));
+        
+        // Add query keywords
+        prioritizedKeywords.push(...queryKeywords.slice(0, 2));
+        
+        // Remove duplicates while preserving order
+        const uniqueKeywords = [...new Set(prioritizedKeywords)];
         
         const result = {
             fullUrl: url,
@@ -242,7 +340,7 @@ export function extractUrlInfo(url, pageTitle = '') {
             mainDomain: mainDomain,
             domainName: domainName,
             path: urlObj.pathname,
-            keywords: allKeywords.slice(0, 5), // Limit to 5 most relevant keywords
+            keywords: uniqueKeywords.slice(0, 5), // Limit to 5 most relevant keywords
             title: pageTitle
         };
         

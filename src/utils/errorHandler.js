@@ -1,5 +1,5 @@
 /*
- * 404 Finder - Auto-Search Redirector
+ * 404 Finder: Auto-Search Redirector
  * Copyright (C) 2025 by John Moremm L. Abuyabor
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  */
 
 /**
- * Error Handler Module for 404 Finder Extension
+ * Error Handler Module for 404 Finder: Auto-Search Redirector Extension
  * 
  * This module provides comprehensive error handling and recovery mechanisms
  * to ensure the extension remains stable and functional even when errors occur.

@@ -1,16 +1,23 @@
-# Creating a Chrome Extension: 404 Finder
+# Creating a Chrome Extension: 404 Finder: Auto-Search Redirector
 
-This document will guide you through the creation process of the "404 Finder" Chrome extension, designed to detect 404 errors and perform auto-searches. This guide assumes you are a mid-level web developer with an understanding of HTML, JavaScript, and CSS, but are new to developing Chrome extensions.
+This educational guide walks through the development of the "404 Finder" Chrome extension, which automatically detects 404 errors and redirects users to intelligent search results. This guide is for developers new to Chrome extensions but familiar with web technologies.
 
 ## Overview
 
-The "404 Finder" extension aims to enhance user experience by automatically searching for content on other sites when encountering 404 errors or similar frustrating webpage issues. This involves several key aspects:
+The "404 Finder" extension enhances web browsing by:
+- Detecting both HTTP 404 errors and "soft" 404s (pages that return 200 but show error content)
+- Generating smart search queries using advanced keyword extraction
+- Supporting 10+ search engines with custom URL options
+- Managing domain-specific behavior with whitelist/blacklist
+- Providing a clean, modern UI with dark mode support
 
-1. **Manifest File:** Setting up the extension's configuration.
-2. **Content Scripts:** Injecting JavaScript to run on specific web pages.
-3. **Background Scripts:** Maintaining long-lasting processes to listen for events.
-4. **Messaging:** Facilitating communication between scripts.
-5. **User Interface Elements:** Building popups, options pages, and notifications.
+## Key Components
+
+1. **Manifest V3 Configuration:** Modern Chrome extension setup
+2. **Service Worker (Background):** Persistent event handling and 404 detection
+3. **Content Scripts:** Page analysis and auto-search triggering
+4. **Smart Query Generation:** URL decoding and keyword extraction
+5. **User Interface:** Popup, options page, and toast notifications
 
 ## Step-by-Step Guide
 
@@ -131,15 +138,95 @@ Example in `popup.html`:
 
 Provide an options page for users to configure settings, like enabling auto-search or choosing search engines.
 
-### 6. Testing and Packaging
+### 6. Smart Query Generation
 
-- **Test:** Use a test environment to mimic real-world scenarios and ensure detection and search logic work flawlessly.
-- **Package:** Zip your extension files and prepare for submission to the Chrome Web Store.
+One of the most innovative features is the intelligent query generation system that creates relevant search queries from broken URLs:
+
+#### URL Decoding and Cleaning
+```javascript
+function cleanUrlString(str) {
+    try {
+        // Decode URL encoding (handles %20, %2C, etc.)
+        let decoded = decodeURIComponent(str);
+        // Replace separators with spaces
+        decoded = decoded.replace(/[\-_+]/g, ' ');
+        return decoded.trim();
+    } catch (e) {
+        return str.replace(/[\-_+]/g, ' ').trim();
+    }
+}
+```
+
+#### Keyword Extraction Process
+1. **Content Collection**: Gather text from multiple sources:
+   - Page title (cleaned of error messages)
+   - Meta descriptions and keywords
+   - Breadcrumb navigation
+   - Non-error headings (h1, h2, h3)
+   - URL path segments
+
+2. **Stop Word Filtering**: Remove common words that don't add search value:
+   ```javascript
+   const stopWords = ['the', 'is', 'at', 'which', 'on', ...];
+   ```
+
+3. **Smart Prioritization**: Keywords are ranked by relevance:
+   - Domain name (if meaningful)
+   - Title keywords (highest priority)
+   - Path keywords (medium priority)
+   - Query parameters (lowest priority)
+
+#### Example Transformation
+- **Input URL**: `youtube.com/watch?v=missing%20video%20link`
+- **Processing Steps**:
+  1. Decode: `missing%20video%20link` → `missing video link`
+  2. Extract domain: `youtube`
+  3. Extract path: `watch`
+  4. Clean and prioritize: `["youtube", "watch", "missing", "video", "link"]`
+- **Final Query**: `youtube watch missing video link`
+
+### 7. Advanced Features
+
+#### Dark Mode Support
+The extension automatically adapts to the user's browser theme:
+```css
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #202124;
+        --text-primary: #E8EAED;
+    }
+}
+```
+
+#### Loop Prevention
+To prevent infinite redirect loops, the extension checks if the current domain is a search engine:
+```javascript
+const SEARCH_ENGINE_DOMAINS = [
+    'google.com', 'bing.com', 'duckduckgo.com', ...
+];
+```
+
+### 8. Testing and Packaging
+
+- **Test Scenarios**:
+  - HTTP 404 pages
+  - Soft 404s (200 status but error content)
+  - Various URL encodings
+  - Different languages and character sets
+  - Search engine loop prevention
+
+- **Package for Production**:
+  1. Set `isProduction = true` in debugLogger.js
+  2. Remove development console logs
+  3. Minify JavaScript and CSS
+  4. Create ZIP file for Chrome Web Store
 
 ## Key Learning Points
 
-- Understand Chrome Extension architecture and how different scripts interact.
-- Use Chrome-specific APIs for message passing and background tasks.
-- Offer a user-friendly interface and configuration settings.
+- **Chrome Extension Architecture**: Understand how service workers, content scripts, and popups communicate
+- **Advanced DOM Analysis**: Learn techniques for detecting soft 404s through content analysis
+- **Smart Text Processing**: Implement URL decoding, keyword extraction, and stop word filtering
+- **User Experience Design**: Create responsive, theme-aware interfaces
+- **Performance Optimization**: Handle large amounts of text processing efficiently
 
-By following these steps, you can create a Chrome extension that not only detects 404 errors but also provides a helpful, user-friendly solution by automatically searching for the missing content.
+By following this guide, you'll create a sophisticated Chrome extension that not only detects errors but provides intelligent solutions through smart query generation and seamless user experience.

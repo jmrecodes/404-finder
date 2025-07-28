@@ -1,17 +1,54 @@
-# 404 Finder Chrome Extension
+# 404 Finder: Auto-Search Redirector
 
-A powerful Chrome extension that automatically finds and redirects broken pages to relevant search results using customizable search engines and domain filters. It seamlessly detects 404 errors (both hard and soft) and provides intelligent redirection to help you find the content you're looking for.
+A powerful Chrome extension that automatically detects 404 errors and redirects to intelligent search results. Using advanced content analysis and smart keyword extraction, it helps you find the content you were looking for when pages go missing.
 
-## Features
+## 🚀 Key Features
 
-- **Automatic 404 Detection & Redirect**: Detects both HTTP 404 errors and soft 404s, then automatically redirects to search results
-- **Smart Content Analysis**: Uses advanced pattern matching to identify error pages across different websites
-- **Customizable Search Engines**: Choose your preferred search engine for automatic redirects (Google, Bing, DuckDuckGo, etc.)
-- **Domain Management**: Whitelist or blacklist domains to control where auto-search is enabled
-- **Intelligent Query Templates**: Generates smart search queries based on the broken URL and page context
-- **Real-time Notifications**: Optional notifications before redirecting to search results
-- **Rate Limiting**: Prevents redirect loops with built-in rate limiting per domain
-- **Educational Comments**: Learn about Chrome extension development through detailed code comments
+### Core Functionality
+- **🔍 Automatic 404 Detection**: Detects both HTTP 404 errors and "soft" 404s using intelligent content analysis
+- **🎯 Smart Auto-Redirect**: Automatically redirects to search results after a brief delay
+- **🧠 Intelligent Query Generation**: Creates relevant search queries using advanced keyword extraction
+- **🌐 Multi-Search Engine Support**: Choose from 10+ search engines including:
+  - Google, Bing, DuckDuckGo, Yahoo, Yandex
+  - Baidu, Startpage, Searx, Qwant, Ecosia
+  - Custom search engine URL support
+
+### Advanced Features
+- **📋 Domain Management**: 
+  - Whitelist domains for guaranteed auto-search
+  - Blacklist domains to disable auto-search
+  - Bulk domain import/export
+- **🎨 Smart Query Templates**:
+  - Domain + Keywords (default)
+  - Site-specific search
+  - Cached version search
+  - Similar pages search
+  - Technical documentation search
+- **🔔 Toast Notifications**: A notification is shown before redirecting
+- **🌙 Dark Mode Support**: Automatically adapts to your browser theme
+- **💾 Settings Backup**: Import/export all settings as JSON
+
+### Smart Query Generation ✨
+The extension uses sophisticated algorithms to generate the most relevant search queries:
+
+1. **URL Decoding**: Properly handles encoded URLs (`%20` → spaces)
+2. **Content Extraction**: Gathers keywords from:
+   - Page title (cleaned of error messages)
+   - Meta descriptions and keywords
+   - Breadcrumb navigation
+   - Non-error headings (h1, h2, h3)
+   - URL path segments
+3. **Intelligent Filtering**:
+   - Removes common stop words
+   - Filters out error-related terms
+   - Prioritizes meaningful keywords
+4. **Smart Prioritization**:
+   - Domain name (if meaningful)
+   - Title keywords (most relevant)
+   - Path keywords (second priority)
+   - Query parameters (third priority)
+
+**Example**: `youtube.com/watch?v=missing%20video%20link` → `youtube watch missing video link`
 
 ## Installation
 
@@ -41,13 +78,13 @@ A powerful Chrome extension that automatically finds and redirects broken pages 
 
 ## Educational Value
 
-Beyond its practical functionality, the 404 Finder extension serves as an educational resource for developers interested in Chrome extension development. The codebase includes:
+Beyond its practical functionality, the 404 Finder: Auto-Search Redirector extension serves as an educational resource for developers interested in Chrome extension development. The codebase includes:
 
 - **Detailed Code Comments**: Every major function and API usage is thoroughly documented with explanations
 - **Chrome API Demonstrations**: Real-world examples of webNavigation, webRequest, storage, and messaging APIs
 - **Architecture Patterns**: Learn about background service workers, content scripts, and popup interactions
 - **Security Best Practices**: See how to handle permissions, content security policies, and safe DOM manipulation
-- **Performance Considerations**: Understand rate limiting, session storage, and efficient message passing
+- **Performance Considerations**: Understand session storage, and efficient message passing
 
 ### Key Learning Topics Covered:
 
@@ -92,7 +129,6 @@ Beyond its practical functionality, the 404 Finder extension serves as an educat
    - Page title (if available)
    - Customizable query templates
 4. **Redirect**: Automatically redirects to your preferred search engine
-5. **Rate Limiting**: Prevents redirect loops (30-second cooldown per domain)
 
 ### Exporting Error Data
 
@@ -119,7 +155,6 @@ Access the options page by:
   - Custom Template: Define your own search query pattern
 - **Notification Settings**: Show/hide notifications before redirecting
 - **Detection Sensitivity**: Adjust soft 404 detection aggressiveness
-- **Rate Limit Duration**: Set cooldown period between auto-searches (default: 30 seconds)
 - **Domain Lists**: Manage whitelisted and blacklisted domains
 - **Export Format**: Choose between CSV and JSON for error history exports
 

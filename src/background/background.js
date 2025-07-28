@@ -1,5 +1,5 @@
 /*
- * 404 Finder - Auto-Search Redirector
+ * 404 Finder: Auto-Search Redirector
  * Copyright (C) 2025 by John Moremm L. Abuyabor
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  */
 
 /**
- * Background Service Worker for 404 Finder Extension
+ * Background Service Worker for 404 Finder: Auto-Search Redirector Extension
  * 
  * This service worker detects 404 errors in two ways:
  * 1. Using webNavigation API to catch HTTP error responses
@@ -106,8 +106,7 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
                     indicators
                 });
                 
-                // Update badge to show error count
-                updateBadge(details.tabId);
+                // Badge feature removed for cleaner UI
                 
                 // Store in persistent storage
                 await store404Error(details.url, details.tabId, confidence, indicators);
@@ -140,8 +139,7 @@ chrome.webRequest.onHeadersReceived.addListener(
                 statusCode: details.statusCode
             });
             
-            // Update badge
-            updateBadge(details.tabId);
+            // Badge feature removed for cleaner UI
             
             // Store in persistent storage
             store404Error(details.url, details.tabId, 100, ['HTTP 404 Status']);
@@ -262,28 +260,7 @@ function detect404Content(url) {
     };
 }
 
-// Update extension badge with error count
-async function updateBadge(tabId) {
-    const errors = tabErrors.get(tabId) || [];
-    const count = errors.length;
-    
-    if (count > 0) {
-        await chrome.action.setBadgeText({
-            text: count.toString(),
-            tabId: tabId
-        });
-        
-        await chrome.action.setBadgeBackgroundColor({
-            color: '#FF4136',  // Orange/red from logo rocket
-            tabId: tabId
-        });
-    } else {
-        await chrome.action.setBadgeText({
-            text: '',
-            tabId: tabId
-        });
-    }
-}
+// Badge feature removed - updateBadge function no longer needed
 
 // Store 404 error in persistent storage
 async function store404Error(url, tabId, confidence, indicators) {
@@ -368,12 +345,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         tabErrors.clear();
         chrome.storage.local.set({ errors: [] });
         
-        // Clear all badges
-        chrome.tabs.query({}, (tabs) => {
-            tabs.forEach(tab => {
-                chrome.action.setBadgeText({ text: '', tabId: tab.id });
-            });
-        });
+        // Badge feature removed - no badges to clear
         
         sendResponse({ success: true });
         return true;
@@ -600,7 +572,7 @@ async function createAutoSearchNotification(url, searchEngine, searchUrl) {
  */
 
 // Initialize extension
-console.log('404 Finder extension initialized');
+console.log('404 Finder: Auto-Search Redirector extension initialized');
 
 /**
  * Educational: Chrome Extension Architecture

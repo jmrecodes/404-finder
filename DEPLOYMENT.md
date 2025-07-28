@@ -1,8 +1,8 @@
-# Deployment Guide for 404 Finder Chrome Extension
+# Deployment Guide for 404 Finder: Auto-Search Redirector Chrome Extension
 
 ## Overview
 
-This document provides a step-by-step guide to deploying the 404 Finder Chrome Extension to the Chrome Web Store. This guide covers everything from preparation to submission and post-launch monitoring.
+This document provides a step-by-step guide to deploying the 404 Finder: Auto-Search Redirector Chrome Extension to the Chrome Web Store. This guide covers everything from preparation to submission and post-launch monitoring.
 
 ## Preparation
 

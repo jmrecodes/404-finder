@@ -1,5 +1,5 @@
 /*
- * 404 Finder - Auto-Search Redirector
+ * 404 Finder: Auto-Search Redirector
  * Copyright (C) 2025 by John Moremm L. Abuyabor
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  */
 
 /**
- * Debug Logger Module for 404 Finder Extension
+ * Debug Logger Module for 404 Finder: Auto-Search Redirector Extension
  * 
  * This module provides a centralized logging system with configurable verbosity levels.
  * It's designed specifically for Chrome extension debugging and includes:
@@ -48,7 +48,10 @@ const LOG_COLORS = {
 
 class DebugLogger {
     constructor() {
-        this.currentLevel = LOG_LEVELS.INFO; // Default log level
+        // Production mode - set to true to disable ALL logging
+        this.isProduction = true;
+        
+        this.currentLevel = LOG_LEVELS.ERROR; // Default log level - production setting
         this.performanceMetrics = new Map();
         this.logHistory = [];
         this.maxHistorySize = 1000;
@@ -110,6 +113,11 @@ class DebugLogger {
      * @param {Object} context - Additional context data
      */
     log(level, message, context = {}) {
+        // In production mode, disable ALL logging
+        if (this.isProduction) {
+            return;
+        }
+        
         const levelValue = LOG_LEVELS[level];
         
         // Check if this log level should be displayed

@@ -1,5 +1,5 @@
 /*
- * 404 Finder - Auto-Search Redirector
+ * 404 Finder: Auto-Search Redirector
  * Copyright (C) 2025 by John Moremm L. Abuyabor
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  */
 
 /**
- * Content Script for 404 Finder Extension
+ * Content Script for 404 Finder: Auto-Search Redirector Extension
  * 
  * This script runs on every page and:
  * 1. Detects if the current page is a 404 error
@@ -30,16 +30,12 @@
  * - Content scripts have access to a limited subset of Chrome APIs
  */
 
-// Configuration constants for auto-search functionality and rate limiting
+// Configuration constants for auto-search functionality
 const AUTO_SEARCH_CONFIG = {
-    // Minimum delay before auto-searching (prevents rapid repeated searches)
+    // Minimum delay before auto-searching (prevents jarring immediate redirects)
     MIN_DELAY_MS: 3000,
     // Maximum delay before giving up on auto-search
-    MAX_DELAY_MS: 10000,
-    // Key for storing last search timestamp in sessionStorage
-    LAST_SEARCH_KEY: '404_finder_last_search',
-    // Minimum time between searches for the same domain (rate limiting)
-    RATE_LIMIT_MS: 30000 // 30 seconds
+    MAX_DELAY_MS: 10000
 };
 
 // List of common search engine domains to prevent redirect loops
@@ -157,8 +153,8 @@ function checkIf404Page() {
 /**
  * Check if auto-search should be performed based on:
  * - User settings (global and per-domain)
- * - Rate limiting to prevent search loops
  * - Domain whitelist/blacklist status
+ * - Search engine domain check to prevent loops
  */
 async function checkAutoSearchEligibility() {
     try {
@@ -200,44 +196,58 @@ async function checkAutoSearchEligibility() {
     }
 }
 
-/**
- * Check if enough time has passed since last search for this domain
- * Uses sessionStorage to persist rate limit data across page navigation
- * 
- * @param {string} domain - The domain to check
- * @returns {boolean} True if search is allowed (rate limit not exceeded)
- */
-function checkRateLimit(domain) {
-    try {
-        const lastSearchKey = `${AUTO_SEARCH_CONFIG.LAST_SEARCH_KEY}_${domain}`;
-        const lastSearchTime = sessionStorage.getItem(lastSearchKey);
-        
-        if (!lastSearchTime) {
-            return true;
-        }
-        
-        const timeSinceLastSearch = Date.now() - parseInt(lastSearchTime, 10);
-        return timeSinceLastSearch >= AUTO_SEARCH_CONFIG.RATE_LIMIT_MS;
-    } catch (error) {
-        // If sessionStorage is not available, allow the search
-        console.warn('[404 Finder] Could not check rate limit:', error);
-        return true;
-    }
-}
 
 /**
- * Update rate limit timestamp for domain
- * Stores current timestamp in sessionStorage for rate limiting
+ * Extract meaningful content from the page for better keyword generation
  * 
- * @param {string} domain - The domain to update
+ * @returns {Object} Object containing page content and metadata
  */
-function updateRateLimit(domain) {
-    try {
-        const lastSearchKey = `${AUTO_SEARCH_CONFIG.LAST_SEARCH_KEY}_${domain}`;
-        sessionStorage.setItem(lastSearchKey, Date.now().toString());
-    } catch (error) {
-        console.warn('[404 Finder] Could not update rate limit:', error);
-    }
+function extractPageContent() {
+    // Get clean page title without error messages
+    let cleanTitle = document.title;
+    
+    // Remove common 404 error phrases from title
+    const errorPhrases = ['404', 'not found', 'error', 'page not found', '- Not Found'];
+    errorPhrases.forEach(phrase => {
+        cleanTitle = cleanTitle.replace(new RegExp(phrase, 'gi'), '').trim();
+    });
+    
+    // Extract meaningful content from meta tags
+    const metaDescription = document.querySelector('meta[name="description"]')?.content || '';
+    const metaKeywords = document.querySelector('meta[name="keywords"]')?.content || '';
+    
+    // Try to extract the intended page topic from breadcrumbs
+    const breadcrumbs = [];
+    document.querySelectorAll('nav[aria-label="breadcrumb"] a, .breadcrumb a, [class*="breadcrumb"] a').forEach(link => {
+        const text = link.textContent.trim();
+        if (text && text.length > 1 && !text.match(/^(home|index)$/i)) {
+            breadcrumbs.push(text);
+        }
+    });
+    
+    // Look for meaningful content in headings (excluding error messages)
+    const headings = [];
+    document.querySelectorAll('h1, h2, h3').forEach(heading => {
+        const text = heading.textContent.trim();
+        // Skip if it contains error indicators
+        if (!text.match(/(404|error|not found|oops)/i) && text.length > 3) {
+            headings.push(text);
+        }
+    });
+    
+    // Extract meaningful path segments from URL
+    const pathSegments = window.location.pathname
+        .split('/')
+        .filter(segment => segment && segment.length > 2 && !segment.match(/^\d+$/));
+    
+    return {
+        cleanTitle,
+        metaDescription,
+        metaKeywords,
+        breadcrumbs: breadcrumbs.join(' '),
+        headings: headings.join(' '),
+        pathSegments: pathSegments.join(' ')
+    };
 }
 
 /**
@@ -250,17 +260,26 @@ function updateRateLimit(domain) {
 async function performAutoSearch(searchEngine, queryTemplate) {
     console.log('[404 Finder] Performing auto-search with:', searchEngine, queryTemplate);
     
-    // Update rate limit
-    updateRateLimit(window.location.hostname);
-    
     // Display notification before redirect
     displaySearchNotification(searchEngine);
+    
+    // Extract enhanced page content for better keywords
+    const pageContent = extractPageContent();
+    
+    // Create enhanced title with all meaningful content
+    const enhancedTitle = [
+        pageContent.cleanTitle,
+        pageContent.breadcrumbs,
+        pageContent.headings,
+        pageContent.metaKeywords,
+        pageContent.pathSegments
+    ].filter(content => content && content.length > 0).join(' ');
     
     // Request search URL from background script
     const response = await chrome.runtime.sendMessage({
         action: 'generateSearchUrl',
         url: window.location.href,
-        title: document.title,
+        title: enhancedTitle || document.title, // Fallback to original title if enhanced is empty
         searchEngine: searchEngine,
         queryTemplate: queryTemplate
     });
@@ -345,36 +364,6 @@ function displaySearchNotification(searchEngine) {
     document.body.appendChild(notification);
 }
 
-/**
- * Display a rate limit message
- */
-function displayRateLimitMessage() {
-    const message = document.createElement('div');
-    message.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #FF4136;
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        font-size: 14px;
-        z-index: 999999;
-        max-width: 300px;
-        box-shadow: 0 4px 12px rgba(255, 65, 54, 0.25);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    `;
-    
-    message.textContent = 'Auto-search rate limit active. Please wait before searching again.';
-    
-    document.body.appendChild(message);
-    
-    // Remove after 5 seconds
-    setTimeout(() => {
-        message.remove();
-    }, 5000);
-}
 
 /**
  * Educational: Message Passing in Chrome Extensions

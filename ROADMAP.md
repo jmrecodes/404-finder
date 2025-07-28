@@ -1,8 +1,8 @@
-# 404 Finder Extension - Development Roadmap
+# 404 Finder: Auto-Search Redirector Extension - Development Roadmap
 
 ## Project Overview
 
-The 404 Finder Chrome Extension is designed to help web developers, content creators, and SEO professionals identify broken links and missing pages while browsing. This roadmap outlines the development phases, completed features, and future enhancements.
+The 404 Finder: Auto-Search Redirector Chrome Extension is designed to help web developers, content creators, and SEO professionals identify broken links and missing pages while browsing. This roadmap outlines the development phases, completed features, and future enhancements.
 
 ## Development Phases
 
@@ -48,11 +48,14 @@ The 404 Finder Chrome Extension is designed to help web developers, content crea
 - [x] Domain status display in popup
 - [x] Persistent storage of domain lists
 - [x] Quick add/remove domain buttons
+- [x] Bulk domain import/export
+- [x] Settings backup and restore
 
 **Technical Achievements**:
 - Implemented efficient domain matching algorithm
 - Created modular domain management system
 - Integrated with Chrome storage API
+- Added JSON import/export functionality
 
 ### Phase 4: User Interface & Experience ✅ COMPLETED
 
@@ -61,29 +64,42 @@ The 404 Finder Chrome Extension is designed to help web developers, content crea
 **Features Implemented**:
 - [x] Modern, responsive popup design
 - [x] Real-time status indicators
-- [x] Badge counter for error tracking
+- [x] Dark mode support with automatic detection
 - [x] Intuitive options page layout
 - [x] Visual feedback for all actions
+- [x] Toast notifications for auto-search
 
 **Technical Achievements**:
 - Implemented reactive UI updates
 - Created consistent design system
 - Optimized for performance
+- Added theme-aware styling
 
-### Phase 5: Search Integration ✅ COMPLETED
+### Phase 5: Search Integration & Smart Query Generation ✅ COMPLETED
 
 **Timeline**: Week 8
 
 **Features Implemented**:
-- [x] Multiple search engine support
-- [x] Configurable search engine list
+- [x] Support for 10+ search engines (Google, Bing, DuckDuckGo, Yahoo, Yandex, Baidu, etc.)
+- [x] Custom search engine URL support
 - [x] One-click search for broken links
-- [x] Custom search query generation
+- [x] Smart query generation with:
+  - URL decoding (handles %20, etc.)
+  - Keyword extraction from multiple sources
+  - Stop word filtering
+  - Intelligent keyword prioritization
+- [x] Multiple query templates:
+  - Domain + Keywords
+  - Site-specific search
+  - Cached version search
+  - Similar pages search
+  - Technical documentation search
 
 **Technical Achievements**:
 - Created extensible search engine configuration
-- Implemented efficient tab management
-- Added support for 10+ search engines
+- Implemented sophisticated keyword extraction algorithm
+- Added content analysis for better search relevance
+- Built flexible query template system
 
 ### Phase 6: Documentation & Testing ✅ COMPLETED
 

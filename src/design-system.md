@@ -1,4 +1,4 @@
-# 404 Finder Extension Design System
+# 404 Finder: Auto-Search Redirector Extension Design System
 
 ## Color Palette
 
