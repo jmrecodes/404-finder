@@ -302,15 +302,16 @@ function displaySearchNotification(searchEngine) {
         position: fixed;
         top: 20px;
         right: 20px;
-        background: #4285f4;
+        background: #001F3F;
         color: white;
         padding: 16px 24px;
         border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 12px rgba(0, 31, 63, 0.15);
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         font-size: 14px;
         z-index: 999999;
         animation: slideIn 0.3s ease-out;
+        border: 2px solid #39CCCC;
     `;
     
     notification.innerHTML = `
@@ -353,14 +354,16 @@ function displayRateLimitMessage() {
         position: fixed;
         bottom: 20px;
         right: 20px;
-        background: #f44336;
+        background: #FF4136;
         color: white;
         padding: 12px 20px;
-        border-radius: 4px;
+        border-radius: 8px;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         font-size: 14px;
         z-index: 999999;
         max-width: 300px;
+        box-shadow: 0 4px 12px rgba(255, 65, 54, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.2);
     `;
     
     message.textContent = 'Auto-search rate limit active. Please wait before searching again.';

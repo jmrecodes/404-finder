@@ -27,18 +27,18 @@
 
 /* CSS Variables for consistent theming */
 :root {
-  --primary-color: #1a73e8;
-  --primary-hover: #1557b0;
-  --success-color: #1e8e3e;
-  --warning-color: #ea8600;
-  --danger-color: #d93025;
-  --text-primary: #202124;
-  --text-secondary: #5f6368;
+--primary-color: #001F3F;
+  --primary-hover: #001830;
+  --success-color: #39CCCC;
+  --warning-color: #FF4136;
+  --danger-color: #FF4136;
+  --text-primary: #001F3F;
+  --text-secondary: #39CCCC;
   --text-tertiary: #80868b;
-  --background: #ffffff;
-  --surface: #f8f9fa;
-  --border: #dadce0;
-  --shadow: rgba(60, 64, 67, 0.15);
+  --background: #F4F4F4;
+  --surface: #ffffff;
+  --border: #e0e0e0;
+  --shadow: rgba(60, 64, 67, 0.1);
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
@@ -86,13 +86,28 @@ body {
   background: var(--surface);
 }
 
-.extension-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--text-primary);
+.header-content {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.extension-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
 }
 
 /* Status indicator */

@@ -274,7 +274,7 @@ async function updateBadge(tabId) {
         });
         
         await chrome.action.setBadgeBackgroundColor({
-            color: '#FF0000',
+            color: '#FF4136',  // Orange/red from logo rocket
             tabId: tabId
         });
     } else {
