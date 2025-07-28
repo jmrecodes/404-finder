@@ -59,6 +59,55 @@ export const SEARCH_ENGINES = {
         queryParam: 'q',
         icon: 'duckduckgo',
         description: 'Search privately with DuckDuckGo'
+    },
+    yahoo: {
+        name: 'Yahoo',
+        baseUrl: 'https://search.yahoo.com/search',
+        queryParam: 'p',
+        icon: 'yahoo',
+        description: 'Search with Yahoo'
+    },
+    yandex: {
+        name: 'Yandex',
+        baseUrl: 'https://yandex.com/search/',
+        queryParam: 'text',
+        icon: 'yandex',
+        description: 'Search with Yandex'
+    },
+    baidu: {
+        name: 'Baidu',
+        baseUrl: 'https://www.baidu.com/s',
+        queryParam: 'wd',
+        icon: 'baidu',
+        description: 'Search with Baidu'
+    },
+    startpage: {
+        name: 'Startpage',
+        baseUrl: 'https://www.startpage.com/sp/search',
+        queryParam: 'q',
+        icon: 'startpage',
+        description: 'Private search with Startpage'
+    },
+    searx: {
+        name: 'Searx',
+        baseUrl: 'https://searx.be/',
+        queryParam: 'q',
+        icon: 'searx',
+        description: 'Metasearch with Searx'
+    },
+    qwant: {
+        name: 'Qwant',
+        baseUrl: 'https://www.qwant.com/',
+        queryParam: 'q',
+        icon: 'qwant',
+        description: 'Search with Qwant'
+    },
+    ecosia: {
+        name: 'Ecosia',
+        baseUrl: 'https://www.ecosia.org/search',
+        queryParam: 'q',
+        icon: 'ecosia',
+        description: 'Search and plant trees with Ecosia'
     }
 };
 

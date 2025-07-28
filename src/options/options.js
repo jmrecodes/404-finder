@@ -34,11 +34,11 @@ function loadSettings() {
         // Domain Management
         loadDomainLists(settings);
 
-        // Advanced Settings
-        document.getElementById('track-subresources').checked = settings.trackSubresources || false;
-        document.getElementById('show-notifications').checked = settings.showNotifications || false;
-        document.getElementById('max-stored-errors').value = settings.maxStoredErrors || 100;
-        document.getElementById('auto-cleanup').checked = settings.autoCleanup || false;
+        // Custom Search Settings
+        document.getElementById('custom-search-url').value = settings.customSearchUrl || '';
+        
+        // Show/hide custom URL field based on search engine selection
+        toggleCustomUrlField();
     });
 }
 
@@ -52,10 +52,7 @@ function saveSettings() {
         enableAllSearchEngines: document.getElementById('enable-all-search-engines').checked,
         enableAutoSearch: document.getElementById('enable-auto-search').checked,
         showAutoSearchNotifications: document.getElementById('show-auto-search-notifications').checked,
-        trackSubresources: document.getElementById('track-subresources').checked,
-        showNotifications: document.getElementById('show-notifications').checked,
-        maxStoredErrors: parseInt(document.getElementById('max-stored-errors').value, 10),
-        autoCleanup: document.getElementById('auto-cleanup').checked
+        customSearchUrl: document.getElementById('custom-search-url').value
     };
 
     chrome.storage.local.set(settings, () => {
@@ -71,17 +68,29 @@ function saveSettings() {
 function loadDomainLists(settings) {
     // Populate whitelist
     const whitelistContainer = document.getElementById('whitelist-container');
-    whitelistContainer.innerHTML = '';
-    (settings.whitelistDomains || []).forEach(domain => {
-        addDomainEntry(whitelistContainer, domain, true);
-    });
+    
+    if (!settings.whitelistDomains.length) {
+        // Hide whitelist container
+        whitelistContainer.style.display = 'none';
+    } else {
+        whitelistContainer.innerHTML = '';
+        (settings.whitelistDomains || []).forEach(domain => {
+            addDomainEntry(whitelistContainer, domain, true);
+        });
+    }
 
     // Populate blacklist
     const blacklistContainer = document.getElementById('blacklist-container');
-    blacklistContainer.innerHTML = '';
-    (settings.blacklistDomains || []).forEach(domain => {
-        addDomainEntry(blacklistContainer, domain, false);
-    });
+    
+    if (!settings.blacklistDomains.length) {
+        // Hide blacklist container
+        blacklistContainer.style.display = 'none';
+    } else {
+        blacklistContainer.innerHTML = '';
+        (settings.blacklistDomains || []).forEach(domain => {
+            addDomainEntry(blacklistContainer, domain, false);
+        });
+    }
 }
 
 /**
@@ -170,9 +179,27 @@ function showStatus(message, isSuccess) {
     setTimeout(() => { statusMessage.textContent = ''; }, 3000);
 }
 
+/**
+ * Toggle visibility of custom URL field based on search engine selection
+ */
+function toggleCustomUrlField() {
+    const searchEngine = document.getElementById('default-search-engine').value;
+    const customUrlGroup = document.getElementById('settings-container');
+    
+    if (searchEngine === 'custom') {
+        customUrlGroup.style.display = 'block';
+        
+        const customUrlInput = document.getElementById('custom-search-url');
+        customUrlInput.focus();
+    } else {
+        customUrlGroup.style.display = 'none';
+    }
+}
+
 // Event Listeners
 
 document.getElementById('save-settings').addEventListener('click', saveSettings);
+document.getElementById('default-search-engine').addEventListener('change', toggleCustomUrlField);
 document.getElementById('reset-settings').addEventListener('click', loadSettings);
 document.getElementById('export-settings').addEventListener('click', exportSettings);
 document.getElementById('import-settings').addEventListener('click', importSettings);
@@ -410,10 +437,7 @@ function resetToDefaults() {
         enableAllSearchEngines: true,  // Enable all search engines by default
         enableAutoSearch: true,  // Enable auto-search by default
         showAutoSearchNotifications: true,
-        trackSubresources: false,
-        showNotifications: false,
-        maxStoredErrors: 100,
-        autoCleanup: false,
+        customSearchUrl: '',
         whitelistDomains: [],
         blacklistDomains: []  // Empty by default - all domains enabled
     };

@@ -469,74 +469,110 @@ input[type="checkbox"] {
     }
 }
 
-/* Dark Mode Support (if browser preference is dark) */
+/* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
-    body {
-        background-color: #1a1a1a;
-        color: #e0e0e0;
+    :root {
+        /* Adjusted colors for dark mode */
+        --primary-color: #0A4F8F;  /* Lighter navy for visibility */
+        --primary-hover: #0D66B8;
+        --accent-color: #FF6B5C;   /* Lighter orange */
+        --secondary-color: #4DD4D4; /* Lighter teal */
+        --success-color: #4DD4D4;
+        --warning-color: #FF6B5C;
+        --danger-color: #FF6B5C;
+        
+        /* Text colors for dark mode */
+        --text-primary: #E8EAED;
+        --text-secondary: #9AA0A6;
+        --text-tertiary: #5F6368;
+        
+        /* Surface colors for dark mode */
+        --background: #202124;
+        --surface: #292A2D;
+        --surface-hover: #323639;
+        --border: #3C4043;
+        
+        /* Shadow adjustments */
+        --shadow: rgba(0, 0, 0, 0.3);
+        --shadow-hover: rgba(0, 0, 0, 0.5);
     }
     
-    header,
-    .settings-section {
-        background-color: #2a2a2a;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    /* Status message colors */
+    #status-message {
+        color: #4DD4D4 !important; /* Use teal for success in dark mode */
     }
     
-    header h1,
-    .settings-section h2,
-    .domain-section h3 {
-        color: #e0e0e0;
+    /* Button adjustments */
+    .btn-primary {
+        background-color: var(--primary-color);
     }
     
-    .subtitle,
-    .section-description,
-    .help-text {
-        color: #b0b0b0;
+    .btn-primary:hover {
+        background-color: var(--primary-hover);
     }
     
-    .form-control {
-        background-color: #333;
-        color: #e0e0e0;
-        border-color: #444;
+    .btn-secondary {
+        background-color: var(--secondary-color);
+        color: #202124;
     }
     
-    .form-control:focus {
-        border-color: #5dade2;
-        box-shadow: 0 0 0 2px rgba(93, 173, 226, 0.3);
+    .btn-secondary:hover {
+        background-color: #3ABFBF;
+        color: #202124;
     }
     
-    .domain-list {
-        background-color: #1a1a1a;
-        border-color: #444;
+    .btn-success {
+        background-color: var(--success-color);
+        color: #202124;
     }
     
-    .domain-entry {
-        background-color: #2a2a2a;
-        border-color: #444;
+    .btn-success:hover {
+        background-color: #3ABFBF;
+        color: #202124;
     }
     
-    .domain-entry:hover {
-        background-color: #333;
+    .btn-danger {
+        background-color: var(--danger-color);
     }
     
-    .modal-content {
-        background-color: #2a2a2a;
+    .btn-danger:hover {
+        background-color: #FF5544;
     }
     
-    .modal-header,
-    .modal-footer {
-        border-color: #444;
+    /* Modal overlay */
+    .modal {
+        background-color: rgba(0, 0, 0, 0.75);
     }
     
-    .modal-header h3 {
-        color: #e0e0e0;
+    /* Scrollbar styling for dark mode */
+    .domain-list::-webkit-scrollbar-track {
+        background: #292A2D;
     }
     
-    .close {
-        color: #999;
+    .domain-list::-webkit-scrollbar-thumb {
+        background: #5F6368;
     }
     
-    .close:hover {
-        color: #e0e0e0;
+    .domain-list::-webkit-scrollbar-thumb:hover {
+        background: #80868B;
+    }
+    
+    /* Additional hover states */
+    .toggle-label:hover {
+        background: var(--surface-hover);
+    }
+    
+    /* Logo icon colors in dark mode */
+    .logo-icon text {
+        fill: var(--text-primary);
+    }
+    
+    .logo-icon path[fill="#FF4136"] {
+        fill: var(--accent-color);
+    }
+    
+    .logo-icon circle[stroke="#39CCCC"],
+    .logo-icon path[stroke="#39CCCC"] {
+        stroke: var(--secondary-color);
     }
 }

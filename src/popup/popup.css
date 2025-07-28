@@ -404,7 +404,60 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-/* Dark mode support (future enhancement) */
+/* Dark mode support */
 @media (prefers-color-scheme: dark) {
-  /* Dark mode variables would go here */
+  :root {
+    /* Adjusted colors for dark mode */
+    --primary-color: #0A4F8F;  /* Lighter navy for visibility */
+    --primary-hover: #0D66B8;
+    --success-color: #4DD4D4;  /* Lighter teal */
+    --warning-color: #FF6B5C;  /* Lighter orange */
+    --danger-color: #FF6B5C;
+    --text-primary: #E8EAED;
+    --text-secondary: #9AA0A6;
+    --text-tertiary: #5F6368;
+    --background: #202124;
+    --surface: #292A2D;
+    --border: #3C4043;
+    --shadow: rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Adjust specific elements for better dark mode appearance */
+  .status-indicator {
+    background: var(--surface);
+  }
+  
+  .toggle-slider {
+    background: #5F6368;
+  }
+  
+  input:checked + .toggle-slider {
+    background: var(--primary-color);
+  }
+  
+  .action-btn {
+    background: var(--surface);
+    border-color: var(--border);
+  }
+  
+  .action-btn:hover {
+    background: var(--background);
+  }
+  
+  .search-section {
+    background: var(--surface);
+  }
+  
+  .popup-footer {
+    background: var(--surface);
+  }
+  
+  .footer-btn:last-child {
+    background: var(--background);
+    border-color: var(--border);
+  }
+  
+  .footer-btn:last-child:hover {
+    background: var(--surface);
+  }
 }

@@ -398,13 +398,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === 'generateSearchUrl') {
-        try {
-            const searchUrl = generateSearchUrl(request.url, request.title, request.searchEngine, request.queryTemplate);
-            sendResponse({ success: true, searchUrl });
-        } catch (error) {
-            console.error('Error generating search URL:', error);
-            sendResponse({ success: false });
-        }
+        generateSearchUrl(request.url, request.title, request.searchEngine, request.queryTemplate)
+            .then(searchUrl => {
+                sendResponse({ success: true, searchUrl });
+            })
+            .catch(error => {
+                console.error('Error generating search URL:', error);
+                sendResponse({ success: false });
+            });
         return true;
     }
 
@@ -467,8 +468,31 @@ async function checkAutoSearchEligibility(domain, url) {
 }
 
 // Generate search URL based on configured templates
-function generateSearchUrl(url, title, searchEngine = 'google', queryTemplate = 'domainAndKeywords') {
+async function generateSearchUrl(url, title, searchEngine = 'google', queryTemplate = 'domainAndKeywords') {
     try {
+        // Check if using custom search engine
+        if (searchEngine === 'custom') {
+            const settings = await chrome.storage.local.get(['customSearchUrl']);
+            const customUrl = settings.customSearchUrl;
+            
+            if (!customUrl) {
+                console.error('Custom search URL not configured');
+                return null;
+            }
+            
+            // Extract URL info for query construction
+            const urlInfo = genSearchUrls(url, queryTemplate, title)[0];
+            if (!urlInfo || !urlInfo.query) {
+                console.error('Failed to generate search query');
+                return null;
+            }
+            
+            // Replace {query} placeholder with actual query
+            const searchUrl = customUrl.replace('{query}', encodeURIComponent(urlInfo.query));
+            return searchUrl;
+        }
+        
+        // Use predefined search engines
         const searchUrls = genSearchUrls(url, queryTemplate, title);
         const matchingEngine = searchUrls.find(su => su.engine.name.toLowerCase() === searchEngine.toLowerCase());
         return matchingEngine ? matchingEngine.url : null;

@@ -41,6 +41,14 @@
                     <option value="google">Google</option>
                     <option value="bing">Bing</option>
                     <option value="duckduckgo">DuckDuckGo</option>
+                    <option value="yahoo">Yahoo</option>
+                    <option value="yandex">Yandex</option>
+                    <option value="baidu">Baidu</option>
+                    <option value="startpage">Startpage</option>
+                    <option value="searx">Searx</option>
+                    <option value="qwant">Qwant</option>
+                    <option value="ecosia">Ecosia</option>
+                    <option value="custom">Custom URL</option>
                 </select>
                 <p class="help-text">This search engine will be used by default when searching for alternatives.</p>
             </div>
@@ -63,6 +71,17 @@
                     Show all search engines in popup
                 </label>
                 <p class="help-text">When enabled, the popup will show search options for all configured search engines.</p>
+            </div>
+        </section>
+        
+        <!-- Custom Search Settings -->
+        <section class="settings-section" id="settings-container" style="display: none">
+            <h2>Custom Search Settings</h2>
+            
+            <div class="setting-group">
+                <label for="custom-search-url">Custom Search Engine URL</label>
+                <input type="text" id="custom-search-url" class="form-control" placeholder="https://example.com/search?q={query}">
+                <p class="help-text">Use {query} as placeholder for the search term. Example: https://www.startpage.com/do/search?q={query}</p>
             </div>
         </section>
 
@@ -129,41 +148,6 @@
                     <button id="bulk-add-blacklist" class="btn btn-secondary">Bulk Add</button>
                     <button id="clear-blacklist" class="btn btn-danger">Clear All</button>
                 </div>
-            </div>
-        </section>
-
-        <!-- Advanced Settings -->
-        <section class="settings-section">
-            <h2>Advanced Settings</h2>
-            
-            <div class="setting-group">
-                <label>
-                    <input type="checkbox" id="track-subresources">
-                    Track 404 errors in page resources
-                </label>
-                <p class="help-text">Enable tracking of 404 errors for images, scripts, stylesheets, and other page resources.</p>
-            </div>
-
-            <div class="setting-group">
-                <label>
-                    <input type="checkbox" id="show-notifications">
-                    Show desktop notifications for 404 errors
-                </label>
-                <p class="help-text">Get notified when a 404 error is detected while browsing.</p>
-            </div>
-
-            <div class="setting-group">
-                <label for="max-stored-errors">Maximum stored errors</label>
-                <input type="number" id="max-stored-errors" class="form-control" min="10" max="1000" value="100">
-                <p class="help-text">Maximum number of 404 errors to store. Older entries will be removed when limit is reached.</p>
-            </div>
-
-            <div class="setting-group">
-                <label>
-                    <input type="checkbox" id="auto-cleanup">
-                    Automatically clean up old errors
-                </label>
-                <p class="help-text">Remove errors older than 30 days automatically.</p>
             </div>
         </section>
 
