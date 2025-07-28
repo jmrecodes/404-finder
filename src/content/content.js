@@ -59,13 +59,20 @@ const SEARCH_ENGINE_DOMAINS = [
  * Runs when the page is fully loaded
  */
 async function init() {
-    console.log('[404 Finder] Content script initialized');
+    // Skip detection on search engine domains entirely
+    const currentDomain = window.location.hostname.toLowerCase();
+    const isSearchEngine = SEARCH_ENGINE_DOMAINS.some(searchDomain => {
+        return currentDomain === searchDomain || currentDomain.endsWith('.' + searchDomain);
+    });
+    
+    if (isSearchEngine) {
+        return;
+    }
     
     // Check if this page appears to be a 404
     const is404 = await checkIf404Page();
     
     if (is404) {
-        console.log('[404 Finder] 404 page detected');
         
         // Notify background script about the 404 detection
         chrome.runtime.sendMessage({
@@ -80,45 +87,202 @@ async function init() {
 }
 
 /**
- * Check if the current page is a 404 error
- * This duplicates some logic from background.js but runs in the content script context
- * for immediate detection without requiring message passing
+ * Check if the current page is a 404 error using a sophisticated scoring system
+ * Requires multiple strong indicators to prevent false positives
  * 
- * @returns {boolean} True if page appears to be a 404
+ * @returns {Object} Detection result with confidence score and details
  */
 function checkIf404Page() {
-    // Common 404 indicators
-    const indicators = [
-        '404', 'not found', 'page not found', 'file not found',
-        'the page you requested', 'could not be found', 'does not exist',
-        'page cannot be found', 'error 404', '404 error',
-        "this content isn't available", // Facebook soft 404
-        "temporarily blocked", // Other soft 404 cues
-        "misusing this feature by going too fast",
-        // Additional soft 404 patterns for various sites
-        "this page isn't available", "the link you followed may be broken",
-        "sorry, that page doesn't exist", "this account doesn't exist",
-        "user not found", "profile not found", "content not found",
-        "no longer available", "has been removed", "couldn't find",
-        "unable to find", "we can't find", "nothing here",
-        "oops", "dead link", "broken link"
-    ];
+    const detectionResult = {
+        is404: false,
+        confidence: 0,
+        indicators: [],
+        strongIndicators: 0,
+        weakIndicators: 0
+    };
     
-    // Check title
-    const titleLower = document.title.toLowerCase();
-    for (const indicator of indicators) {
-        if (titleLower.includes(indicator)) {
-            return true;
+    // Content analysis - crucial for detecting soft 404s
+    const pageContent = document.body?.textContent || '';
+    const words = pageContent.split(/\s+/).filter(word => word.length > 2);
+    const wordCount = words.length;
+    const uniqueWords = new Set(words.map(w => w.toLowerCase())).size;
+    const sentenceCount = (pageContent.match(/[.!?]+/g) || []).length;
+    
+    // Calculate content sparsity score
+    let contentSparsityScore = 0;
+    let sparsityMultiplier = 1.0;
+    
+    // Very short content is highly suspicious
+    if (wordCount < 20) {
+        contentSparsityScore = 35;
+        sparsityMultiplier = 2.0; // Double the weight of pattern matches
+        detectionResult.indicators.push(`Extremely sparse content: ${wordCount} words`);
+    } else if (wordCount < 50) {
+        contentSparsityScore = 25;
+        sparsityMultiplier = 1.5;
+        detectionResult.indicators.push(`Very sparse content: ${wordCount} words`);
+    } else if (wordCount < 100) {
+        contentSparsityScore = 15;
+        sparsityMultiplier = 1.2;
+        detectionResult.indicators.push(`Sparse content: ${wordCount} words`);
+    } else if (wordCount < 200) {
+        contentSparsityScore = 5;
+        detectionResult.indicators.push(`Limited content: ${wordCount} words`);
+    } else if (wordCount > 500) {
+        // Substantial content reduces 404 likelihood
+        contentSparsityScore = -20;
+        sparsityMultiplier = 0.7; // Reduce pattern match weights
+        detectionResult.indicators.push('Page has substantial content');
+    }
+    
+    // Low unique word ratio suggests repetitive/templated content
+    const uniqueWordRatio = uniqueWords / Math.max(wordCount, 1);
+    if (wordCount > 10 && uniqueWordRatio < 0.5) {
+        contentSparsityScore += 10;
+        detectionResult.indicators.push('Low vocabulary diversity');
+    }
+    
+    // Check sentence to word ratio (404 pages often have short, simple sentences)
+    if (wordCount > 0 && sentenceCount > 0) {
+        const wordsPerSentence = wordCount / sentenceCount;
+        if (wordsPerSentence < 8) {
+            contentSparsityScore += 10;
+            detectionResult.indicators.push('Very short sentences');
         }
     }
     
-    // Check main headings
-    const headings = document.querySelectorAll('h1, h2');
-    for (const heading of headings) {
-        const headingText = heading.textContent.toLowerCase();
-        for (const indicator of indicators) {
-            if (headingText.includes(indicator)) {
-                return true;
+    detectionResult.confidence += contentSparsityScore;
+    
+    // Get title and body text early
+    const titleText = document.title || '';
+    const bodyText = document.body?.textContent || '';
+    
+    // Platform-specific soft 404 patterns (high confidence for specific domains)
+    const platformSpecific404s = [
+        // GitHub
+        {
+            domain: 'github.com',
+            patterns: [
+                { pattern: /Page\s+not\s+found/i, weight: 40, context: 'title' },
+                { pattern: /"404".*not.*the.*page.*you.*are.*looking.*for/i, weight: 50, context: 'any' },
+                { pattern: /This\s+is\s+not\s+the\s+(web\s+)?page\s+you.*looking\s+for/i, weight: 40, context: 'any' }
+            ]
+        },
+        // Facebook
+        {
+            domain: 'facebook.com',
+            patterns: [
+                { pattern: /This\s+content\s+isn[''']?t\s+available/i, weight: 40, context: 'any' },
+                { pattern: /it[''']?s\s+been\s+deleted/i, weight: 30, context: 'any' },
+                { pattern: /owner\s+only\s+shared\s+it\s+with\s+a\s+small\s+group/i, weight: 25, context: 'any' }
+            ]
+        },
+        // Twitter/X
+        {
+            domain: 'twitter.com',
+            patterns: [
+                { pattern: /This\s+account\s+doesn'?t\s+exist/i, weight: 50, context: 'any' },
+                { pattern: /Try\s+searching\s+for\s+another/i, weight: 20, context: 'any' }
+            ]
+        },
+        {
+            domain: 'x.com',
+            patterns: [
+                { pattern: /This\s+account\s+doesn'?t\s+exist/i, weight: 50, context: 'any' },
+                { pattern: /Try\s+searching\s+for\s+another/i, weight: 20, context: 'any' }
+            ]
+        }
+    ];
+    
+    // Check platform-specific patterns first
+    const currentDomain = window.location.hostname.toLowerCase();
+    for (const platform of platformSpecific404s) {
+        if (currentDomain.includes(platform.domain)) {
+            for (const pattern of platform.patterns) {
+                // Check in title
+                if ((pattern.context === 'title' || pattern.context === 'any') && pattern.pattern.test(titleText)) {
+                    detectionResult.confidence += pattern.weight * sparsityMultiplier;
+                    detectionResult.strongIndicators++;
+                    detectionResult.indicators.push(`Platform-specific (${platform.domain}): ${pattern.pattern.source}`);
+                }
+                
+                // Check in body
+                if (pattern.context === 'any' && pattern.pattern.test(bodyText)) {
+                    detectionResult.confidence += pattern.weight * 0.5 * sparsityMultiplier; // Half weight for body
+                    detectionResult.indicators.push(`Platform-specific body (${platform.domain}): ${pattern.pattern.source}`);
+                }
+            }
+        }
+    }
+    
+    // Strong indicators (high confidence)
+    const strongIndicators = [
+        { pattern: /^404\s*[-–—]?\s*(error|not\s+found|page\s+not\s+found)/i, weight: 40, context: 'title' },
+        { pattern: /^error\s+404/i, weight: 40, context: 'title' },
+        { pattern: /Page\s+not\s+found/i, weight: 35, context: 'title' },
+        { pattern: /HTTP\s+(ERROR\s+)?404/i, weight: 35, context: 'any' },
+        { pattern: /404\s+File\s+or\s+directory\s+not\s+found/i, weight: 35, context: 'any' },
+        { pattern: /The\s+requested\s+(URL|resource)\s+.*\s+was\s+not\s+found/i, weight: 30, context: 'any' },
+        // GitHub style with quotes
+        { pattern: /"404".*not.*the.*page.*you.*are.*looking.*for/i, weight: 40, context: 'any' },
+        { pattern: /This\s+is\s+not\s+the\s+(web\s+)?page\s+you.*looking\s+for/i, weight: 35, context: 'any' }
+    ];
+    
+    // Medium indicators
+    const mediumIndicators = [
+        { pattern: /page\s+(you([''']re|\s+are)\s+looking\s+for\s+)?(cannot\s+be\s+found|doesn[''']?t\s+exist)/i, weight: 20, context: 'any' },
+        { pattern: /sorry[,.]?\s+(this|that)\s+page\s+(doesn[''']?t|does\s+not)\s+exist/i, weight: 20, context: 'any' },
+        { pattern: /we\s+can[''']?t\s+find\s+(the\s+page|what)\s+you([''']?re)?\s+looking\s+for/i, weight: 20, context: 'any' },
+        { pattern: /this\s+content\s+isn[''']?t\s+available/i, weight: 30, context: 'any' }, // Increased weight for Facebook
+        { pattern: /page\s+has\s+been\s+(removed|deleted|moved)/i, weight: 15, context: 'any' },
+        { pattern: /This\s+page\s+isn[''']?t\s+available/i, weight: 20, context: 'any' },
+        // Facebook specific patterns
+        { pattern: /it[''']?s\s+been\s+deleted/i, weight: 25, context: 'any' },
+        { pattern: /owner\s+only\s+shared\s+it\s+with\s+a\s+small\s+group/i, weight: 20, context: 'any' }
+    ];
+    
+    // Weak indicators (require multiple occurrences)
+    const weakIndicators = [
+        { pattern: /not\s+found/i, weight: 5, context: 'body' },
+        { pattern: /doesn'?t\s+exist/i, weight: 5, context: 'body' },
+        { pattern: /no\s+longer\s+available/i, weight: 5, context: 'body' },
+        { pattern: /broken\s+link/i, weight: 5, context: 'body' },
+        { pattern: /dead\s+link/i, weight: 5, context: 'body' }
+    ];
+    
+    // Check strong indicators in title
+    for (const indicator of strongIndicators) {
+        if ((indicator.context === 'title' || indicator.context === 'any') && indicator.pattern.test(titleText)) {
+            detectionResult.confidence += indicator.weight * sparsityMultiplier;
+            detectionResult.strongIndicators++;
+            detectionResult.indicators.push(`Title matches: ${indicator.pattern.source}`);
+        }
+    }
+    
+    // Check medium indicators in title with sparsity multiplier
+    for (const indicator of mediumIndicators) {
+        if ((indicator.context === 'title' || indicator.context === 'any') && indicator.pattern.test(titleText)) {
+            detectionResult.confidence += indicator.weight * sparsityMultiplier;
+            detectionResult.indicators.push(`Title matches (medium): ${indicator.pattern.source}`);
+        }
+    }
+    
+    // Check H1 tags (primary headings are important)
+    const h1Elements = document.querySelectorAll('h1');
+    for (const h1 of h1Elements) {
+        const h1Text = h1.textContent || '';
+        
+        // Check all indicators in H1
+        for (const indicators of [strongIndicators, mediumIndicators]) {
+            for (const indicator of indicators) {
+                if (indicator.context === 'any' && indicator.pattern.test(h1Text)) {
+                    const adjustedWeight = indicator.weight * 0.8 * sparsityMultiplier;
+                    detectionResult.confidence += adjustedWeight;
+                    if (indicators === strongIndicators) {
+                        detectionResult.strongIndicators++;
+                    }
+                    detectionResult.indicators.push(`H1 matches: ${indicator.pattern.source}`);
+                }
             }
         }
     }
@@ -126,28 +290,163 @@ function checkIf404Page() {
     // Check meta tags
     const metaStatusCode = document.querySelector('meta[name="prerender-status-code"]');
     if (metaStatusCode && metaStatusCode.content === '404') {
-        return true;
+        detectionResult.confidence += 50;
+        detectionResult.strongIndicators++;
+        detectionResult.indicators.push('Meta prerender-status-code is 404');
+    }
+    
+    // Check HTTP status meta tag
+    const metaHttpStatus = document.querySelector('meta[http-equiv="status"]');
+    if (metaHttpStatus && metaHttpStatus.content === '404') {
+        detectionResult.confidence += 50;
+        detectionResult.strongIndicators++;
+        detectionResult.indicators.push('Meta http-equiv status is 404');
     }
     
     // Check URL patterns
     const urlLower = window.location.href.toLowerCase();
-    const urlPatterns = ['/404', '/error', '/notfound', '/page-not-found'];
-    for (const pattern of urlPatterns) {
-        if (urlLower.includes(pattern)) {
-            return true;
+    const urlPatterns = [
+        { pattern: /\/404(\.html?)?$/i, weight: 30 },
+        { pattern: /\/error\/404/i, weight: 30 },
+        { pattern: /\/not[-_]?found/i, weight: 20 },
+        { pattern: /\/page[-_]?not[-_]?found/i, weight: 25 }
+    ];
+    
+    for (const urlPattern of urlPatterns) {
+        if (urlPattern.pattern.test(urlLower)) {
+            detectionResult.confidence += urlPattern.weight;
+            detectionResult.indicators.push(`URL matches: ${urlPattern.pattern.source}`);
         }
     }
     
-    // Check body text (with stricter matching to reduce false positives)
-    const bodyText = document.body.textContent.toLowerCase();
-    const strongIndicators = ['404 error', 'error 404', '404 - not found', 'http 404'];
-    for (const indicator of strongIndicators) {
-        if (bodyText.includes(indicator)) {
-            return true;
+    // Count weak indicators in body
+    let weakIndicatorCount = 0;
+    for (const indicator of weakIndicators) {
+        const matches = bodyText.match(indicator.pattern);
+        if (matches && matches.length > 0) {
+            weakIndicatorCount++;
+            detectionResult.weakIndicators++;
         }
     }
     
-    return false;
+    // Only add confidence from weak indicators if multiple are found
+    if (weakIndicatorCount >= 3) {
+        detectionResult.confidence += weakIndicatorCount * 3;
+        detectionResult.indicators.push(`Multiple weak indicators found: ${weakIndicatorCount}`);
+    }
+    
+    // Check for strong patterns in body with adjusted weights
+    for (const indicator of strongIndicators.concat(mediumIndicators)) {
+        if (indicator.context === 'any' && indicator.pattern.test(bodyText)) {
+            // Adjust body weight based on content sparsity
+            let bodyWeight = 0.3; // Default low weight
+            if (wordCount < 100) {
+                bodyWeight = 0.6; // Higher weight for sparse pages
+            } else if (wordCount < 200) {
+                bodyWeight = 0.4;
+            }
+            detectionResult.confidence += indicator.weight * bodyWeight * sparsityMultiplier;
+            detectionResult.indicators.push(`Body matches: ${indicator.pattern.source}`);
+        }
+    }
+    
+    // Page structure analysis
+    const images = document.querySelectorAll('img');
+    const links = document.querySelectorAll('a');
+    const forms = document.querySelectorAll('form');
+    
+    // Special handling for known sites with complex navigation
+    const isKnownSite = ['github.com', 'facebook.com', 'twitter.com', 'x.com']
+        .some(domain => currentDomain.includes(domain));
+    
+    // 404 pages typically have minimal content (but adjust for sites with nav chrome)
+    if (!isKnownSite && images.length <= 2 && links.length <= 10 && forms.length === 0) {
+        detectionResult.confidence += 10;
+        detectionResult.indicators.push('Minimal page structure');
+    } else if (isKnownSite && wordCount < 100) {
+        // For known sites, focus on content sparsity rather than structure
+        detectionResult.confidence += 5;
+        detectionResult.indicators.push('Known site with sparse content');
+    }
+    
+    // Check for common 404 page elements
+    const has404Image = Array.from(images).some(img => 
+        img.src.toLowerCase().includes('404') || 
+        img.alt.toLowerCase().includes('404')
+    );
+    
+    if (has404Image) {
+        detectionResult.confidence += 20;
+        detectionResult.indicators.push('404 image found');
+    }
+    
+    // Final determination - adjust thresholds based on content sparsity
+    let confidenceThreshold = 60;
+    let strongIndicatorRequirement = 1;
+    
+    // Adjust thresholds based on content
+    if (wordCount < 20) {
+        // Very likely a 404 if it has minimal content AND any error indicators
+        confidenceThreshold = 45;
+        strongIndicatorRequirement = 0; // Even medium indicators are enough
+    } else if (wordCount < 50) {
+        confidenceThreshold = 50;
+        strongIndicatorRequirement = 0;
+    } else if (wordCount < 100) {
+        confidenceThreshold = 55;
+    } else if (wordCount < 200) {
+        confidenceThreshold = 58;
+    }
+    
+    // Special handling for pages with strong 404 signals
+    const hasExplicit404 = bodyText.includes('404') || titleText.includes('404');
+    const hasMultipleIndicators = detectionResult.indicators.length >= 3;
+    
+    // Check for platform-specific detection
+    let platformDetected = false;
+    for (const platform of platformSpecific404s) {
+        if (currentDomain.includes(platform.domain)) {
+            // Check if we matched any platform-specific patterns
+            const platformIndicators = detectionResult.indicators.filter(ind => 
+                ind.includes(`Platform-specific (${platform.domain})`) || 
+                ind.includes(`Platform-specific body (${platform.domain})`)
+            );
+            if (platformIndicators.length > 0) {
+                platformDetected = true;
+                break;
+            }
+        }
+    }
+    
+    // Detection logic
+    if (detectionResult.confidence >= 80) {
+        // Very high confidence always means 404
+        detectionResult.is404 = true;
+    } else if (hasExplicit404 && detectionResult.confidence >= 40) {
+        // Pages with explicit "404" need lower threshold
+        detectionResult.is404 = true;
+    } else if (platformDetected) {
+        // Special handling for known platforms with heavy chrome
+        if (currentDomain.includes('facebook.com') && detectionResult.confidence >= 35) {
+            // Facebook loads tons of nav/footer even on 404s
+            detectionResult.is404 = true;
+        } else if (detectionResult.confidence >= 45) {
+            // Other platforms need slightly higher confidence
+            detectionResult.is404 = true;
+        }
+    } else if (wordCount < 100 && detectionResult.confidence >= confidenceThreshold) {
+        // Sparse pages only need to meet confidence threshold
+        detectionResult.is404 = true;
+    } else if (hasMultipleIndicators && detectionResult.confidence >= confidenceThreshold - 5) {
+        // Multiple indicators can slightly lower the threshold
+        detectionResult.is404 = true;
+    } else {
+        // Standard detection: require both confidence and strong indicators
+        detectionResult.is404 = detectionResult.confidence >= confidenceThreshold && 
+                                 detectionResult.strongIndicators >= strongIndicatorRequirement;
+    }
+    
+    return detectionResult.is404;
 }
 
 /**
@@ -167,7 +466,6 @@ async function checkAutoSearchEligibility() {
         });
         
         if (isSearchEngine) {
-            console.log('[404 Finder] Skipping auto-search on search engine domain:', domain);
             return;
         }
         
@@ -178,76 +476,53 @@ async function checkAutoSearchEligibility() {
             url: window.location.href
         });
         
-        console.log('[404 Finder] Auto-search eligibility response:', response);
-        
         if (response && response.shouldAutoSearch) {
             // Add delay to prevent jarring immediate redirects
             setTimeout(() => {
                 performAutoSearch(response.searchEngine, response.queryTemplate);
             }, AUTO_SEARCH_CONFIG.MIN_DELAY_MS);
-        } else {
-            console.log('[404 Finder] Auto-search not enabled for this domain');
-            if (response && response.reason) {
-                console.log('[404 Finder] Reason:', response.reason);
-            }
         }
     } catch (error) {
-        console.error('[404 Finder] Error checking auto-search eligibility:', error);
+        // Silent fail - auto-search is not critical
     }
 }
 
 
 /**
- * Extract meaningful content from the page for better keyword generation
+ * Extract query from URL - Simple and direct approach
+ * Uses only the last path segment as it typically contains the most relevant identifier
+ * Example: site.com/posts/category/invalid-title -> "site invalid title"
  * 
- * @returns {Object} Object containing page content and metadata
+ * @returns {string} Simple search query from URL components
  */
-function extractPageContent() {
-    // Get clean page title without error messages
-    let cleanTitle = document.title;
-    
-    // Remove common 404 error phrases from title
-    const errorPhrases = ['404', 'not found', 'error', 'page not found', '- Not Found'];
-    errorPhrases.forEach(phrase => {
-        cleanTitle = cleanTitle.replace(new RegExp(phrase, 'gi'), '').trim();
-    });
-    
-    // Extract meaningful content from meta tags
-    const metaDescription = document.querySelector('meta[name="description"]')?.content || '';
-    const metaKeywords = document.querySelector('meta[name="keywords"]')?.content || '';
-    
-    // Try to extract the intended page topic from breadcrumbs
-    const breadcrumbs = [];
-    document.querySelectorAll('nav[aria-label="breadcrumb"] a, .breadcrumb a, [class*="breadcrumb"] a').forEach(link => {
-        const text = link.textContent.trim();
-        if (text && text.length > 1 && !text.match(/^(home|index)$/i)) {
-            breadcrumbs.push(text);
-        }
-    });
-    
-    // Look for meaningful content in headings (excluding error messages)
-    const headings = [];
-    document.querySelectorAll('h1, h2, h3').forEach(heading => {
-        const text = heading.textContent.trim();
-        // Skip if it contains error indicators
-        if (!text.match(/(404|error|not found|oops)/i) && text.length > 3) {
-            headings.push(text);
-        }
-    });
-    
-    // Extract meaningful path segments from URL
-    const pathSegments = window.location.pathname
-        .split('/')
-        .filter(segment => segment && segment.length > 2 && !segment.match(/^\d+$/));
-    
-    return {
-        cleanTitle,
-        metaDescription,
-        metaKeywords,
-        breadcrumbs: breadcrumbs.join(' '),
-        headings: headings.join(' '),
-        pathSegments: pathSegments.join(' ')
-    };
+function extractSimpleQuery() {
+    try {
+        const url = new URL(window.location.href);
+        
+        // Extract domain name without TLD (e.g., 'github' from 'github.com')
+        const domainParts = url.hostname.split('.');
+        const domainName = domainParts[domainParts.length - 2] || domainParts[0] || '';
+        
+        // Get only the last segment of the path
+        const pathSegments = url.pathname.split('/').filter(segment => segment.length > 0);
+        const lastSegment = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : '';
+        
+        // Decode and clean the last segment
+        let pathQuery = decodeURIComponent(lastSegment)
+            .replace(/[-_+]/g, ' ') // Replace separators with spaces
+            .replace(/\.[^.]*$/, '') // Remove file extensions
+            .replace(/\s+/g, ' ') // Collapse multiple spaces
+            .trim();
+        
+        // Combine domain name and last path segment
+        const query = [domainName, pathQuery]
+            .filter(part => part && part.length > 0)
+            .join(' ');
+        
+        return query || domainName || 'search';
+    } catch (error) {
+        return 'search';
+    }
 }
 
 /**
@@ -258,28 +533,17 @@ function extractPageContent() {
  * @param {string} queryTemplate - The query template to use (e.g., 'domainAndKeywords')
  */
 async function performAutoSearch(searchEngine, queryTemplate) {
-    console.log('[404 Finder] Performing auto-search with:', searchEngine, queryTemplate);
-    
     // Display notification before redirect
     displaySearchNotification(searchEngine);
     
-    // Extract enhanced page content for better keywords
-    const pageContent = extractPageContent();
-    
-    // Create enhanced title with all meaningful content
-    const enhancedTitle = [
-        pageContent.cleanTitle,
-        pageContent.breadcrumbs,
-        pageContent.headings,
-        pageContent.metaKeywords,
-        pageContent.pathSegments
-    ].filter(content => content && content.length > 0).join(' ');
+    // Use simple query extraction from URL
+    const simpleQuery = extractSimpleQuery();
     
     // Request search URL from background script
     const response = await chrome.runtime.sendMessage({
         action: 'generateSearchUrl',
         url: window.location.href,
-        title: enhancedTitle || document.title, // Fallback to original title if enhanced is empty
+        title: simpleQuery, // Use simple query instead of complex extraction
         searchEngine: searchEngine,
         queryTemplate: queryTemplate
     });
@@ -292,11 +556,7 @@ async function performAutoSearch(searchEngine, queryTemplate) {
             searchEngine: searchEngine,
             searchUrl: response.searchUrl
         }, (notificationResponse) => {
-            if (notificationResponse && notificationResponse.success) {
-                console.log('[404 Finder] Auto-search notification created');
-            } else {
-                console.error('[404 Finder] Failed to create notification:', notificationResponse?.error);
-            }
+            // Silent handling - notifications are non-critical
         });
 
         // Small delay to allow user to see the notification
@@ -304,7 +564,7 @@ async function performAutoSearch(searchEngine, queryTemplate) {
             window.location.href = response.searchUrl;
         }, 2000); // Increase delay for better UX
     } else {
-        console.error('[404 Finder] Failed to generate search URL');
+        // Silent fail - search redirect failed
     }
 }
 

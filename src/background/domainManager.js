@@ -84,8 +84,8 @@ function isDomainListed(domain, isWhitelist = true) {
 // removeDomain('example.com'); // Remove from whitelist
 // removeDomain('*.example.net', false); // Remove from blacklist
 
-// isDomainListed('sub.example.com').then(console.log); // Check whitelist
-// isDomainListed('test.example.net', false).then(console.log); // Check blacklist
+// isDomainListed('sub.example.com').then(result => { /* handle result */ }); // Check whitelist
+// isDomainListed('test.example.net', false).then(result => { /* handle result */ }); // Check blacklist
 
 initializeStorage();
 

@@ -89,15 +89,29 @@ The background script runs continuously and listens for events triggered by the 
 
 - **Event Listeners:** Respond to messages from content scripts by performing actions like generating search URLs.
 - **Auto-Search Logic:** Use user settings to perform an auto-search when appropriate.
+- **HTTP 404 Detection:** Monitors actual HTTP 404 status codes via `webRequest` API.
+- **Architectural Note:** All soft 404 detection logic is contained in the content script to avoid code duplication.
 
 Example snippet in `background.js`:
 
 ```javascript
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'pageDetected404') {
-    // Handle the 404 detection
+    // Store the 404 error detected by content script
+    // Note: Detection logic is in content script only
   }
 });
+
+// Catch real HTTP 404s
+chrome.webRequest.onHeadersReceived.addListener(
+  (details) => {
+    if (details.statusCode === 404) {
+      // Handle HTTP 404
+    }
+  },
+  { urls: ["<all_urls>"] },
+  ["responseHeaders"]
+);
 ```
 
 ### 4. Messaging
@@ -138,52 +152,47 @@ Example in `popup.html`:
 
 Provide an options page for users to configure settings, like enabling auto-search or choosing search engines.
 
-### 6. Smart Query Generation
+### 6. Simple Query Generation
 
-One of the most innovative features is the intelligent query generation system that creates relevant search queries from broken URLs:
+The extension uses a simplified approach to generate search queries directly from the URL:
 
-#### URL Decoding and Cleaning
+#### Direct URL-to-Query Transformation
 ```javascript
-function cleanUrlString(str) {
+function extractSimpleQuery() {
     try {
-        // Decode URL encoding (handles %20, %2C, etc.)
-        let decoded = decodeURIComponent(str);
-        // Replace separators with spaces
-        decoded = decoded.replace(/[\-_+]/g, ' ');
-        return decoded.trim();
-    } catch (e) {
-        return str.replace(/[\-_+]/g, ' ').trim();
+        const url = new URL(window.location.href);
+        
+        // Extract domain name without TLD
+        const domainParts = url.hostname.split('.');
+        const domainName = domainParts[domainParts.length - 2] || domainParts[0] || '';
+        
+        // Decode and clean the pathname
+        let pathQuery = decodeURIComponent(url.pathname)
+            .replace(/^\//g, '') // Remove leading slash
+            .replace(/\//g, ' ') // Replace slashes with spaces
+            .replace(/[-_+]/g, ' ') // Replace separators with spaces
+            .replace(/\.[^.]*$/, '') // Remove file extensions
+            .replace(/\s+/g, ' ') // Collapse multiple spaces
+            .trim();
+        
+        // Combine domain name and path
+        return `${domainName} ${pathQuery}`.trim();
+    } catch (error) {
+        return 'search';
     }
 }
 ```
 
-#### Keyword Extraction Process
-1. **Content Collection**: Gather text from multiple sources:
-   - Page title (cleaned of error messages)
-   - Meta descriptions and keywords
-   - Breadcrumb navigation
-   - Non-error headings (h1, h2, h3)
-   - URL path segments
+#### Example Transformations
+- **GitHub**: `github.com/missing%20user%20test` → `github missing user test`
+- **Facebook**: `facebook.com/invalid_url_not_found` → `facebook invalid url not found`  
+- **Generic**: `site.com/an%20invalid%20url` → `site an invalid url`
 
-2. **Stop Word Filtering**: Remove common words that don't add search value:
-   ```javascript
-   const stopWords = ['the', 'is', 'at', 'which', 'on', ...];
-   ```
-
-3. **Smart Prioritization**: Keywords are ranked by relevance:
-   - Domain name (if meaningful)
-   - Title keywords (highest priority)
-   - Path keywords (medium priority)
-   - Query parameters (lowest priority)
-
-#### Example Transformation
-- **Input URL**: `youtube.com/watch?v=missing%20video%20link`
-- **Processing Steps**:
-  1. Decode: `missing%20video%20link` → `missing video link`
-  2. Extract domain: `youtube`
-  3. Extract path: `watch`
-  4. Clean and prioritize: `["youtube", "watch", "missing", "video", "link"]`
-- **Final Query**: `youtube watch missing video link`
+#### Benefits of Simple Approach
+1. **Predictable**: Users know exactly what will be searched
+2. **Fast**: No complex content analysis needed
+3. **Accurate**: Directly uses URL components without guessing
+4. **Clean**: No unwanted navigation or UI elements in queries
 
 ### 7. Advanced Features
 

@@ -18,9 +18,14 @@
 /**
  * Background Service Worker for 404 Finder: Auto-Search Redirector Extension
  * 
- * This service worker detects 404 errors in two ways:
- * 1. Using webNavigation API to catch HTTP error responses
- * 2. Content analysis to detect "soft" 404s (pages that return 200 but display 404 content)
+ * This service worker handles:
+ * 1. HTTP 404 detection via webRequest API
+ * 2. Message routing between content scripts and popup
+ * 3. Storage management for errors and settings
+ * 4. Search URL generation and auto-search eligibility
+ * 5. Navigation error tracking
+ * 
+ * Note: Soft 404 detection is handled by the content script to avoid code duplication
  */
 
 // Import modules
@@ -45,8 +50,6 @@ const navigationStates = new Map();
 
 // Listen for navigation errors like network failures
 chrome.webNavigation.onErrorOccurred.addListener((details) => {
-    console.log('Navigation error occurred:', details);
-    
     // Educational: Error types in Chrome
     // - net::ERR_NAME_NOT_RESOLVED: DNS lookup failed
     // - net::ERR_CONNECTION_REFUSED: Server refused connection
@@ -66,55 +69,12 @@ chrome.webNavigation.onErrorOccurred.addListener((details) => {
     });
 });
 
-// Listen for completed navigations to check for HTTP and soft 404s
+// Listen for completed navigations - content script will handle soft 404 detection
 chrome.webNavigation.onCompleted.addListener(async (details) => {
     // Only process main frame navigations
     if (details.frameId !== 0) return;
     
-    console.log('Navigation completed:', details.url);
-    
-    try {
-        // First, try to get tab information to check HTTP status
-        const tab = await chrome.tabs.get(details.tabId);
-        
-        // Educational: Chrome doesn't directly expose HTTP status codes
-        // We need to use content scripts to analyze the page
-        
-        // Check if the page content indicates a 404 error
-        const results = await chrome.scripting.executeScript({
-            target: { tabId: details.tabId },
-            func: detect404Content,
-            args: [details.url]
-        });
-        
-        if (results && results[0] && results[0].result) {
-            const { is404, confidence, indicators } = results[0].result;
-            
-            if (is404) {
-                console.log(`404 detected on ${details.url} with confidence: ${confidence}`);
-                
-                // Store the 404 error
-                if (!tabErrors.has(details.tabId)) {
-                    tabErrors.set(details.tabId, []);
-                }
-                
-                tabErrors.get(details.tabId).push({
-                    url: details.url,
-                    timestamp: details.timeStamp,
-                    type: 'soft_404',
-                    confidence,
-                    indicators
-                });
-                
-                // Badge feature removed for cleaner UI
-                
-                // Store in persistent storage
-                await store404Error(details.url, details.tabId, confidence, indicators);
-            }
-        }
-    } catch (error) {
-        console.error('Error checking for 404:', error);
-    }
+    // Content script will detect soft 404s and notify us via pageDetected404 message
 });
 
 // Listen for HTTP response headers to catch actual 404 status codes
@@ -122,8 +82,6 @@ chrome.webRequest.onHeadersReceived.addListener(
     (details) => {
         // Only process main frame requests
         if (details.type !== 'main_frame') return;
-        
-        console.log(`HTTP ${details.statusCode} for ${details.url}`);
         
         // Check for 404 status code
         if (details.statusCode === 404) {
@@ -149,118 +107,8 @@ chrome.webRequest.onHeadersReceived.addListener(
     ["responseHeaders"]
 );
 
-// Function to detect 404 content in the page
-function detect404Content(url) {
-    /**
-     * Educational: Soft 404 Detection
-     * 
-     * Many websites return HTTP 200 status but display 404 error content.
-     * This function analyzes the page content to detect these "soft" 404s.
-     * 
-     * Detection strategies:
-     * 1. Text content analysis - looking for common 404 phrases
-     * 2. Title analysis - checking document title for 404 indicators
-     * 3. Meta tag analysis - some sites use meta tags to indicate errors
-     * 4. URL pattern analysis - checking for /404, /error, etc.
-     */
-    
-    const indicators = [];
-    let confidence = 0;
-    
-    // Common 404 error messages in multiple languages
-    const errorPhrases = [
-        // English
-        '404', 'not found', 'page not found', 'file not found',
-        'the page you requested', 'could not be found', 'does not exist',
-        'page cannot be found', 'page you are looking for',
-        'broken link', 'dead link', 'error 404', '404 error',
-        'requested URL was not found', 'nothing found',
-        'the requested resource could not be found',
-        
-        // Technical terms
-        'HTTP 404', 'HTTP ERROR 404', '404 - File or directory not found',
-        
-        // Casual/funny 404 messages
-        'oops', 'whoops', 'uh oh', 'page went missing',
-        'lost in space', 'page has vanished',
-        
-        // URL patterns that might indicate 404 pages
-        '/404', '/error', '/notfound', '/page-not-found'
-    ];
-    
-    // Get page content
-    const bodyText = document.body ? document.body.innerText.toLowerCase() : '';
-    const titleText = document.title ? document.title.toLowerCase() : '';
-    const urlLower = url.toLowerCase();
-    
-    // Check title for 404 indicators
-    errorPhrases.forEach(phrase => {
-        if (titleText.includes(phrase.toLowerCase())) {
-            confidence += 30;
-            indicators.push(`Title contains "${phrase}"`);
-        }
-    });
-    
-    // Check body content (with lower weight to avoid false positives)
-    errorPhrases.forEach(phrase => {
-        if (bodyText.includes(phrase.toLowerCase())) {
-            confidence += 10;
-            indicators.push(`Body contains "${phrase}"`);
-        }
-    });
-    
-    // Check URL patterns
-    ['/404', '/error', '/notfound', '/page-not-found'].forEach(pattern => {
-        if (urlLower.includes(pattern)) {
-            confidence += 20;
-            indicators.push(`URL contains "${pattern}"`);
-        }
-    });
-    
-    // Check meta tags
-    const metaTags = document.getElementsByTagName('meta');
-    for (let meta of metaTags) {
-        const content = (meta.getAttribute('content') || '').toLowerCase();
-        const name = (meta.getAttribute('name') || '').toLowerCase();
-        
-        if (name === 'prerender-status-code' && content === '404') {
-            confidence += 50;
-            indicators.push('Meta prerender-status-code is 404');
-        }
-        
-        if (name === 'robots' && content.includes('noindex')) {
-            confidence += 10;
-            indicators.push('Meta robots includes noindex');
-        }
-    }
-    
-    // Check for common 404 page structures
-    const h1Elements = document.getElementsByTagName('h1');
-    for (let h1 of h1Elements) {
-        const h1Text = h1.innerText.toLowerCase();
-        errorPhrases.forEach(phrase => {
-            if (h1Text.includes(phrase.toLowerCase())) {
-                confidence += 25;
-                indicators.push(`H1 contains "${phrase}"`);
-            }
-        });
-    }
-    
-    // Cap confidence at 100
-    confidence = Math.min(confidence, 100);
-    
-    // Consider it a 404 if confidence is above threshold
-    const is404 = confidence >= 40;
-    
-    return {
-        is404,
-        confidence,
-        indicators,
-        url
-    };
-}
-
-// Badge feature removed - updateBadge function no longer needed
+// Soft 404 detection is now handled entirely by the content script
+// This eliminates code duplication and simplifies the architecture
 
 // Store 404 error in persistent storage
 async function store404Error(url, tabId, confidence, indicators) {
@@ -286,8 +134,6 @@ async function store404Error(url, tabId, confidence, indicators) {
         
         // Save back to storage
         await chrome.storage.local.set({ errors });
-        
-        console.log(`Stored 404 error: ${url}`);
     } catch (error) {
         console.error('Error storing 404:', error);
     }
@@ -352,9 +198,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === 'pageDetected404') {
-        // Log 404 detection from content script
-        console.log('[Background] 404 detected by content script:', request.url);
-        // The content script will handle auto-search separately
+        // Store the 404 error detected by content script
+        const tabId = sender.tab?.id;
+        if (tabId) {
+            // Store in memory for popup display
+            if (!tabErrors.has(tabId)) {
+                tabErrors.set(tabId, []);
+            }
+            
+            tabErrors.get(tabId).push({
+                url: request.url,
+                timestamp: Date.now(),
+                type: 'soft_404',
+                title: request.title
+            });
+            
+            // Store in persistent storage
+            store404Error(request.url, tabId, 90, ['Content script detection']);
+        }
+        
         sendResponse({ success: true });
         return true;
     }
@@ -363,7 +225,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         checkAutoSearchEligibility(request.domain, request.url)
             .then(response => sendResponse(response))
             .catch(error => {
-                console.error('Error in checkAutoSearchEligibility:', error);
                 sendResponse({ shouldAutoSearch: false, reason: 'internal_error' });
             });
         return true; // Maintain the message channel open
@@ -375,7 +236,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: true, searchUrl });
             })
             .catch(error => {
-                console.error('Error generating search URL:', error);
                 sendResponse({ success: false });
             });
         return true;
@@ -385,7 +245,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         createAutoSearchNotification(request.url, request.searchEngine, request.searchUrl)
             .then(notificationId => sendResponse({ success: true, notificationId }))
             .catch(error => {
-                console.error('Error creating notification:', error);
                 sendResponse({ success: false, error: error.message });
             });
         return true;
@@ -434,7 +293,6 @@ async function checkAutoSearchEligibility(domain, url) {
             queryTemplate: settings.defaultQueryTemplate || 'domainAndKeywords'
         };
     } catch (error) {
-        console.error('Error checking auto-search eligibility:', error);
         return { shouldAutoSearch: false, reason: 'error_retrieving_settings' };
     }
 }
@@ -448,14 +306,12 @@ async function generateSearchUrl(url, title, searchEngine = 'google', queryTempl
             const customUrl = settings.customSearchUrl;
             
             if (!customUrl) {
-                console.error('Custom search URL not configured');
                 return null;
             }
             
             // Extract URL info for query construction
             const urlInfo = genSearchUrls(url, queryTemplate, title)[0];
             if (!urlInfo || !urlInfo.query) {
-                console.error('Failed to generate search query');
                 return null;
             }
             
@@ -469,7 +325,6 @@ async function generateSearchUrl(url, title, searchEngine = 'google', queryTempl
         const matchingEngine = searchUrls.find(su => su.engine.name.toLowerCase() === searchEngine.toLowerCase());
         return matchingEngine ? matchingEngine.url : null;
     } catch (error) {
-        console.error('Error generating search URLs:', error);
         throw error;
     }
 }
@@ -527,7 +382,6 @@ async function createAutoSearchNotification(url, searchEngine, searchUrl) {
         
         return notificationId;
     } catch (error) {
-        console.error('Error creating notification:', error);
         throw error;
     }
 }
@@ -572,7 +426,7 @@ async function createAutoSearchNotification(url, searchEngine, searchUrl) {
  */
 
 // Initialize extension
-console.log('404 Finder: Auto-Search Redirector extension initialized');
+// Extension is now ready to detect 404 errors
 
 /**
  * Educational: Chrome Extension Architecture

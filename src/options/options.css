@@ -389,6 +389,44 @@ input[type="checkbox"] {
     gap: 10px;
 }
 
+/* Help & Feedback Section */
+.help-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+}
+
+.help-item {
+    padding: var(--spacing-lg);
+    background-color: var(--surface-hover);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.help-item:hover {
+    border-color: var(--secondary-color);
+    box-shadow: 0 2px 8px var(--shadow-hover);
+}
+
+.help-item h4 {
+    margin: 0 0 var(--spacing-sm) 0;
+    color: var(--text-primary);
+    font-size: 16px;
+}
+
+.help-item .help-text {
+    margin-bottom: var(--spacing-md);
+    line-height: 1.5;
+}
+
+.help-item .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
 /* Animations */
 @keyframes fadeIn {
     from {
