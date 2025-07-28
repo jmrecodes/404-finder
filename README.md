@@ -1,17 +1,17 @@
 # 404 Finder Chrome Extension
 
-A powerful Chrome extension that automatically detects and tracks 404 errors while browsing the web. It can identify both hard 404s (HTTP status code 404) and soft 404s (pages that return 200 but display 404 content).
+A powerful Chrome extension that automatically finds and redirects broken pages to relevant search results using customizable search engines and domain filters. It seamlessly detects 404 errors (both hard and soft) and provides intelligent redirection to help you find the content you're looking for.
 
 ## Features
 
-- **Automatic 404 Detection**: Detects both HTTP 404 errors and soft 404s
-- **Smart Content Analysis**: Uses advanced pattern matching to identify error pages
-- **Domain Management**: Whitelist or blacklist domains for monitoring
-- **Search Engine Integration**: Quickly search for broken links across multiple search engines
-- **Real-time Notifications**: Get notified when 404 errors are detected
-- **Error History**: Track and export all detected 404 errors
-- **Badge Counter**: Shows error count directly on the extension icon
-- **Customizable Settings**: Configure detection sensitivity and notification preferences
+- **Automatic 404 Detection & Redirect**: Detects both HTTP 404 errors and soft 404s, then automatically redirects to search results
+- **Smart Content Analysis**: Uses advanced pattern matching to identify error pages across different websites
+- **Customizable Search Engines**: Choose your preferred search engine for automatic redirects (Google, Bing, DuckDuckGo, etc.)
+- **Domain Management**: Whitelist or blacklist domains to control where auto-search is enabled
+- **Intelligent Query Templates**: Generates smart search queries based on the broken URL and page context
+- **Real-time Notifications**: Optional notifications before redirecting to search results
+- **Rate Limiting**: Prevents redirect loops with built-in rate limiting per domain
+- **Educational Comments**: Learn about Chrome extension development through detailed code comments
 
 ## Installation
 
@@ -39,6 +39,26 @@ A powerful Chrome extension that automatically detects and tracks 404 errors whi
 
 *Coming soon! The extension is currently under review.*
 
+## Educational Value
+
+Beyond its practical functionality, the 404 Finder extension serves as an educational resource for developers interested in Chrome extension development. The codebase includes:
+
+- **Detailed Code Comments**: Every major function and API usage is thoroughly documented with explanations
+- **Chrome API Demonstrations**: Real-world examples of webNavigation, webRequest, storage, and messaging APIs
+- **Architecture Patterns**: Learn about background service workers, content scripts, and popup interactions
+- **Security Best Practices**: See how to handle permissions, content security policies, and safe DOM manipulation
+- **Performance Considerations**: Understand rate limiting, session storage, and efficient message passing
+
+### Key Learning Topics Covered:
+
+1. **Service Worker Lifecycle**: How background scripts persist and handle events
+2. **Content Script Isolation**: Understanding the isolated world and DOM access limitations
+3. **Message Passing Patterns**: Communication between different extension components
+4. **Storage API Usage**: Persisting user preferences and data across sessions
+5. **Notification System**: Creating and managing Chrome notifications
+6. **Error Detection Strategies**: Heuristic-based detection of soft 404 pages
+7. **URL Pattern Matching**: Working with navigation events and URL analysis
+
 ## Usage Guide
 
 ### Basic Usage
@@ -47,26 +67,32 @@ A powerful Chrome extension that automatically detects and tracks 404 errors whi
    - Click the extension icon in the toolbar
    - Toggle the switch to "Active"
 
-2. **Browse Normally**:
-   - The extension runs in the background
-   - It automatically detects 404 errors as you browse
+2. **Automatic Redirection**:
+   - When you encounter a 404 page, the extension automatically detects it
+   - After a brief notification, you'll be redirected to search results
+   - The search query is intelligently generated based on the broken URL
 
-3. **View Detected Errors**:
-   - Click the extension icon to see the current page status
-   - The badge shows the number of errors on the current tab
+3. **Manual Search**:
+   - Click the extension icon on any page
+   - Click "Search Page" to manually search for the current URL
+   - Useful for finding alternatives to working but outdated pages
 
 ### Managing Domains
 
-- **Whitelist a Domain**: Domains on the whitelist are always monitored
-- **Blacklist a Domain**: Domains on the blacklist are never monitored
-- **Default Behavior**: Unlisted domains are monitored based on your global settings
+- **Whitelist a Domain**: Always enable auto-search for this domain
+- **Blacklist a Domain**: Never auto-search on this domain (manual search still available)
+- **Default Behavior**: Auto-search is enabled for all unlisted domains
 
-### Searching for Broken Links
+### Auto-Search Behavior
 
-1. Click the extension icon
-2. Select "Search for broken links"
-3. Choose your preferred search engines
-4. The extension will open tabs with search results
+1. **Detection**: The extension detects 404 errors (both HTTP status and soft 404s)
+2. **Notification**: A brief notification appears showing the redirect action
+3. **Smart Query Generation**: Creates search queries using:
+   - Domain name and keywords from the URL
+   - Page title (if available)
+   - Customizable query templates
+4. **Redirect**: Automatically redirects to your preferred search engine
+5. **Rate Limiting**: Prevents redirect loops (30-second cooldown per domain)
 
 ### Exporting Error Data
 
@@ -85,11 +111,17 @@ Access the options page by:
 
 ### Available Settings
 
-- **Detection Sensitivity**: Adjust how aggressively the extension detects soft 404s
-- **Notification Settings**: Choose when to receive notifications
-- **Search Engines**: Select which search engines to use
-- **Auto-Clear History**: Set how long to keep error history
-- **Export Format**: Choose between CSV and JSON for exports
+- **Auto-Search Toggle**: Enable/disable automatic redirection on 404 detection
+- **Default Search Engine**: Choose your preferred search engine (Google, Bing, DuckDuckGo, etc.)
+- **Query Template**: Select how search queries are generated:
+  - Domain and Keywords: Uses domain name plus URL keywords
+  - Full URL: Searches for the complete URL
+  - Custom Template: Define your own search query pattern
+- **Notification Settings**: Show/hide notifications before redirecting
+- **Detection Sensitivity**: Adjust soft 404 detection aggressiveness
+- **Rate Limit Duration**: Set cooldown period between auto-searches (default: 30 seconds)
+- **Domain Lists**: Manage whitelisted and blacklisted domains
+- **Export Format**: Choose between CSV and JSON for error history exports
 
 ## Technical Details
 
