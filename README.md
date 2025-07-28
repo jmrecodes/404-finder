@@ -142,3 +142,5 @@ This project is licensed under the GPL-3.0 license - see the LICENSE file for de
 - Chrome Extensions documentation and examples
 - The web development community for testing and feedback
 - Contributors who have helped improve the extension
+- Warp.dev with Turbo Plan's agentic feature
+- Claude 4 Opus model's planning and development
