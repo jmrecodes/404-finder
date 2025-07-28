@@ -1,0 +1,121 @@
+<!-- 
+* 404 Finder - Auto-Search Redirector
+* Copyright (C) 2025 by John Moremm L. Abuyabor
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License version 3 as published by
+* the Free Software Foundation.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program. If not, see <https://www.gnu.org/licenses/>. 
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 Finder</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- 
+    Chrome Extension Popup Lifecycle:
+    - Popup is created fresh each time user clicks the extension icon
+    - Popup is destroyed when user clicks outside or navigates away
+    - State must be persisted in chrome.storage or background service worker
+    - Maximum recommended size: 800x600px (we're using 350x500px)
+  -->
+  
+  <div class="popup-container">
+    <!-- Header Section -->
+    <header class="popup-header">
+      <h1 class="extension-title">404 Finder</h1>
+      <div class="status-indicator" id="statusIndicator">
+        <span class="status-dot"></span>
+        <span class="status-text">Active</span>
+      </div>
+    </header>
+
+    <!-- Main Toggle Section -->
+    <section class="main-toggle-section">
+      <div class="toggle-container">
+        <label class="toggle-label" for="extensionToggle">
+          <span class="toggle-text">Extension Status</span>
+          <div class="toggle-switch">
+            <input type="checkbox" id="extensionToggle" checked>
+            <span class="toggle-slider"></span>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <!-- Current Domain Section -->
+    <section class="domain-section">
+      <h2 class="section-title">Current Domain</h2>
+      <div class="current-domain-container">
+        <p class="domain-name" id="currentDomain">Loading...</p>
+        <div class="domain-status" id="domainStatus">
+          <!-- Will be populated by JS: "Monitoring", "Whitelisted", or "Blacklisted" -->
+        </div>
+      </div>
+      
+      <!-- Quick Action Buttons -->
+      <div class="quick-actions">
+        <button class="action-btn whitelist-btn" id="whitelistBtn" title="Add to whitelist - domain will be ignored">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+          </svg>
+          Whitelist
+        </button>
+        <button class="action-btn blacklist-btn" id="blacklistBtn" title="Add to blacklist - enhanced monitoring">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+          Blacklist
+        </button>
+      </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="search-section">
+      <h2 class="section-title">Find Missing Page</h2>
+      <p class="search-description">Search for the current page on Google to find alternatives or cached versions.</p>
+    </section>
+
+    <!-- Footer Actions -->
+    <footer class="popup-footer">
+      <button class="footer-btn" id="searchBtn">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        Search Page
+      </button>
+      <button class="footer-btn" id="settingsBtn">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M12 1v6m0 6v6m3.51-13.49L19.95 9.95M4.05 14.05l4.44 4.44M21 12h-6m-6 0H3m13.49 3.51L9.95 19.95M14.05 4.05L9.56 8.54"></path>
+        </svg>
+        Settings
+      </button>
+    </footer>
+  </div>
+
+  <!-- 
+    Chrome Extension Popup Notes:
+    - popup.js must be loaded as a module to use ES6 imports
+    - All external resources must be local (no CDN links due to CSP)
+    - Popup closes when clicking links - use chrome.tabs.create() instead
+  -->
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

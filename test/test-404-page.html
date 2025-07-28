@@ -1,0 +1,214 @@
+<!-- 
+* 404 Finder - Auto-Search Redirector
+* Copyright (C) 2025 by John Moremm L. Abuyabor
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License version 3 as published by
+* the Free Software Foundation.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program. If not, see <https://www.gnu.org/licenses/>. 
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 Test Page - Page Not Found</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #d32f2f;
+            margin-bottom: 10px;
+        }
+        .error-code {
+            font-size: 72px;
+            font-weight: bold;
+            color: #d32f2f;
+            margin: 20px 0;
+        }
+        .test-controls {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .primary {
+            background-color: #1976d2;
+            color: white;
+        }
+        .secondary {
+            background-color: #757575;
+            color: white;
+        }
+        .links {
+            margin-top: 30px;
+        }
+        .links a {
+            display: block;
+            margin: 10px 0;
+            color: #1976d2;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .debug-info {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-code">404</div>
+        <h1>Page Not Found</h1>
+        <p>The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.</p>
+        
+        <!-- Test Controls for Extension Development -->
+        <div class="test-controls">
+            <h3>🧪 Extension Test Controls</h3>
+            <p>Use these controls to test the 404 Finder extension behavior:</p>
+            
+            <button class="primary" onclick="simulateStandard404()">Simulate Standard 404</button>
+            <button class="primary" onclick="simulateSoft404()">Simulate Soft 404</button>
+            <button class="primary" onclick="simulateCustom404()">Simulate Custom 404</button>
+            <button class="secondary" onclick="clearDebugInfo()">Clear Debug Info</button>
+            
+            <div id="status-message" style="margin-top: 10px; color: #388e3c;"></div>
+        </div>
+        
+        <!-- Test Links Section -->
+        <div class="links">
+            <h3>Test Links (These will trigger 404s):</h3>
+            <a href="/broken-link-1">Broken Link 1</a>
+            <a href="/non-existent-page">Non-existent Page</a>
+            <a href="/deleted-content">Deleted Content</a>
+            <a href="/missing-resource.pdf">Missing PDF Resource</a>
+            <a href="/broken-image.jpg">Broken Image Link</a>
+        </div>
+        
+        <!-- Debug Information Display -->
+        <div class="debug-info" id="debug-info">
+            <strong>Debug Information:</strong>
+            <div id="debug-content">
+                <p>Page loaded at: <span id="load-time"></span></p>
+                <p>Current URL: <span id="current-url"></span></p>
+                <p>Referrer: <span id="referrer"></span></p>
+                <p>Response Status: <span id="response-status">404</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize debug information
+        document.getElementById('load-time').textContent = new Date().toISOString();
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('referrer').textContent = document.referrer || 'Direct navigation';
+        
+        // Simulate different types of 404 errors
+        function simulateStandard404() {
+            updateStatus('Simulating standard 404 error...');
+            // Dispatch custom event that the extension can listen for
+            window.dispatchEvent(new CustomEvent('test-404-event', {
+                detail: {
+                    type: 'standard',
+                    statusCode: 404,
+                    timestamp: Date.now()
+                }
+            }));
+            addDebugEntry('Standard 404 simulated');
+        }
+        
+        function simulateSoft404() {
+            updateStatus('Simulating soft 404 (200 status but error content)...');
+            window.dispatchEvent(new CustomEvent('test-404-event', {
+                detail: {
+                    type: 'soft',
+                    statusCode: 200,
+                    timestamp: Date.now(),
+                    note: 'Page returns 200 but contains 404 content'
+                }
+            }));
+            addDebugEntry('Soft 404 simulated (200 status with error content)');
+        }
+        
+        function simulateCustom404() {
+            updateStatus('Simulating custom 404 page...');
+            window.dispatchEvent(new CustomEvent('test-404-event', {
+                detail: {
+                    type: 'custom',
+                    statusCode: 404,
+                    timestamp: Date.now(),
+                    customMessage: 'Custom 404 page with branding'
+                }
+            }));
+            addDebugEntry('Custom 404 simulated');
+        }
+        
+        function updateStatus(message) {
+            const statusEl = document.getElementById('status-message');
+            statusEl.textContent = message;
+            setTimeout(() => {
+                statusEl.textContent = '';
+            }, 3000);
+        }
+        
+        function addDebugEntry(message) {
+            const debugContent = document.getElementById('debug-content');
+            const entry = document.createElement('p');
+            entry.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+            debugContent.appendChild(entry);
+        }
+        
+        function clearDebugInfo() {
+            const debugContent = document.getElementById('debug-content');
+            debugContent.innerHTML = `
+                <p>Page loaded at: <span id="load-time">${new Date().toISOString()}</span></p>
+                <p>Current URL: <span id="current-url">${window.location.href}</span></p>
+                <p>Referrer: <span id="referrer">${document.referrer || 'Direct navigation'}</span></p>
+                <p>Response Status: <span id="response-status">404</span></p>
+            `;
+            updateStatus('Debug info cleared');
+        }
+        
+        // Listen for messages from the extension
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'extension-detected') {
+                addDebugEntry(`Extension detected: ${event.data.message}`);
+            }
+        });
+    </script>
+</body>
+</html>

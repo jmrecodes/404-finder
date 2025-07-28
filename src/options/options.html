@@ -1,0 +1,218 @@
+<!-- 
+* 404 Finder - Auto-Search Redirector
+* Copyright (C) 2025 by John Moremm L. Abuyabor
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License version 3 as published by
+* the Free Software Foundation.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program. If not, see <https://www.gnu.org/licenses/>. 
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 Finder - Settings</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>404 Finder Settings</h1>
+            <p class="subtitle">Configure how the extension detects and handles 404 errors</p>
+        </header>
+
+        <!-- Search Engine Settings -->
+        <section class="settings-section">
+            <h2>Search Engine Preferences</h2>
+            <p class="section-description">Choose your preferred search engines and query templates for finding alternative resources.</p>
+            
+            <div class="setting-group">
+                <label for="default-search-engine">Default Search Engine</label>
+                <select id="default-search-engine" class="form-control">
+                    <option value="google">Google</option>
+                    <option value="bing">Bing</option>
+                    <option value="duckduckgo">DuckDuckGo</option>
+                </select>
+                <p class="help-text">This search engine will be used by default when searching for alternatives.</p>
+            </div>
+
+            <div class="setting-group">
+                <label for="default-query-template">Default Query Template</label>
+                <select id="default-query-template" class="form-control">
+                    <option value="domainAndKeywords">Domain + Keywords</option>
+                    <option value="siteSpecific">Site-specific Search</option>
+                    <option value="cachedVersion">Cached Version</option>
+                    <option value="similarPages">Similar Pages</option>
+                    <option value="technicalDocs">Technical Docs</option>
+                </select>
+                <p class="help-text">Choose how search queries are constructed from failed URLs.</p>
+            </div>
+
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="enable-all-search-engines">
+                    Show all search engines in popup
+                </label>
+                <p class="help-text">When enabled, the popup will show search options for all configured search engines.</p>
+            </div>
+        </section>
+
+        <!-- Auto-Search Settings -->
+        <section class="settings-section">
+            <h2>Auto-Search Settings</h2>
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="enable-auto-search">
+                    Enable auto-search for all domains
+                </label>
+                <p class="help-text">When enabled, automatically search for 404 pages on all domains. You can still use whitelist/blacklist to customize behavior.</p>
+            </div>
+            
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="show-auto-search-notifications">
+                    Show notifications for auto-search actions
+                </label>
+                <p class="help-text">Display toast notifications when auto-search is triggered. Click notifications to open search results in a new tab.</p>
+            </div>
+        </section>
+
+        <!-- Domain Management -->
+        <section class="settings-section">
+            <h2>Domain Management</h2>
+            <p class="section-description">Manage which domains to track or ignore for 404 errors.</p>
+            
+            <!-- Whitelist Section -->
+            <div class="domain-section">
+                <h3>Whitelist</h3>
+                <p class="help-text">Only track 404 errors on these domains. Leave empty to track all domains (except blacklisted ones).</p>
+                
+                <div class="domain-input-group">
+                    <input type="text" id="whitelist-input" class="form-control" placeholder="Enter domain (e.g., example.com or *.example.com)">
+                    <button id="add-whitelist" class="btn btn-primary">Add</button>
+                </div>
+                
+                <div id="whitelist-container" class="domain-list">
+                    <!-- Whitelist domains will be populated here -->
+                </div>
+                
+                <div class="bulk-actions">
+                    <button id="bulk-add-whitelist" class="btn btn-secondary">Bulk Add</button>
+                    <button id="clear-whitelist" class="btn btn-danger">Clear All</button>
+                </div>
+            </div>
+
+            <!-- Blacklist Section -->
+            <div class="domain-section">
+                <h3>Blacklist</h3>
+                <p class="help-text">Never track 404 errors on these domains.</p>
+                
+                <div class="domain-input-group">
+                    <input type="text" id="blacklist-input" class="form-control" placeholder="Enter domain (e.g., example.com or *.example.com)">
+                    <button id="add-blacklist" class="btn btn-primary">Add</button>
+                </div>
+                
+                <div id="blacklist-container" class="domain-list">
+                    <!-- Blacklist domains will be populated here -->
+                </div>
+                
+                <div class="bulk-actions">
+                    <button id="bulk-add-blacklist" class="btn btn-secondary">Bulk Add</button>
+                    <button id="clear-blacklist" class="btn btn-danger">Clear All</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Advanced Settings -->
+        <section class="settings-section">
+            <h2>Advanced Settings</h2>
+            
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="track-subresources">
+                    Track 404 errors in page resources
+                </label>
+                <p class="help-text">Enable tracking of 404 errors for images, scripts, stylesheets, and other page resources.</p>
+            </div>
+
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="show-notifications">
+                    Show desktop notifications for 404 errors
+                </label>
+                <p class="help-text">Get notified when a 404 error is detected while browsing.</p>
+            </div>
+
+            <div class="setting-group">
+                <label for="max-stored-errors">Maximum stored errors</label>
+                <input type="number" id="max-stored-errors" class="form-control" min="10" max="1000" value="100">
+                <p class="help-text">Maximum number of 404 errors to store. Older entries will be removed when limit is reached.</p>
+            </div>
+
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="auto-cleanup">
+                    Automatically clean up old errors
+                </label>
+                <p class="help-text">Remove errors older than 30 days automatically.</p>
+            </div>
+        </section>
+
+        <!-- Import/Export Settings -->
+        <section class="settings-section">
+            <h2>Import/Export Settings</h2>
+            <p class="section-description">Backup your settings or transfer them to another device.</p>
+            
+            <div class="import-export-group">
+                <button id="export-settings" class="btn btn-primary">Export Settings</button>
+                <button id="import-settings" class="btn btn-secondary">Import Settings</button>
+                <input type="file" id="import-file" accept=".json" style="display: none;">
+            </div>
+            
+            <div id="import-export-status" class="status-message"></div>
+        </section>
+
+        <!-- Save/Reset Buttons -->
+        <div class="action-buttons">
+            <button id="save-settings" class="btn btn-success">Save Settings</button>
+            <button id="reset-settings" class="btn btn-danger">Reset to Defaults</button>
+        </div>
+
+        <!-- Status Message -->
+        <div id="status-message" class="status-message"></div>
+    </div>
+
+    <!-- Bulk Add Modal -->
+    <div id="bulk-add-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="bulk-add-title">Bulk Add Domains</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Enter multiple domains, one per line. Wildcards (*) are supported.</p>
+                <textarea id="bulk-domains-input" class="form-control" rows="10" placeholder="example.com
+*.example.net
+sub.example.org
+*.test.com"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-bulk-add" class="btn btn-primary">Add Domains</button>
+                <button id="cancel-bulk-add" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../search/searchEngineConfig.js"></script>
+    <script src="options.js"></script>
+</body>
+</html>
