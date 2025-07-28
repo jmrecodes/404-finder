@@ -109,7 +109,7 @@ Beyond its practical functionality, the 404 Finder: Auto-Search Redirector exten
 2. **Automatic Redirection**:
    - When you encounter a 404 page, the extension automatically detects it
    - After a brief notification, you'll be redirected to search results
-   - The search query is intelligently generated based on the broken URL
+   - The search query is generated directly from the broken URL
 
 3. **Manual Search**:
    - Click the extension icon on any page
@@ -132,13 +132,6 @@ Beyond its practical functionality, the 404 Finder: Auto-Search Redirector exten
    - Customizable query templates
 4. **Redirect**: Automatically redirects to your preferred search engine
 
-### Exporting Error Data
-
-1. Go to the extension options (right-click icon → Options)
-2. Navigate to the "Export" section
-3. Choose your export format (CSV or JSON)
-4. Click "Export" to download the data
-
 ## Configuration
 
 ### Options Page
@@ -151,14 +144,20 @@ Access the options page by:
 
 - **Auto-Search Toggle**: Enable/disable automatic redirection on 404 detection
 - **Default Search Engine**: Choose your preferred search engine (Google, Bing, DuckDuckGo, etc.)
+- **Custom Search URL**: Configure your own search engine with custom URL pattern
 - **Query Template**: Select how search queries are generated:
-  - Domain and Keywords: Uses domain name plus URL keywords
-  - Full URL: Searches for the complete URL
-  - Custom Template: Define your own search query pattern
-- **Notification Settings**: Show/hide notifications before redirecting
-- **Detection Sensitivity**: Adjust soft 404 detection aggressiveness
-- **Domain Lists**: Manage whitelisted and blacklisted domains
-- **Export Format**: Choose between CSV and JSON for error history exports
+  - Domain + Keywords (default): Uses domain name plus URL keywords
+  - Site-specific Search: Searches within the same domain
+  - Cached Version: Looks for archived versions
+  - Similar Pages: Finds similar content
+  - Technical Docs: Searches documentation sites
+- **Show All Search Engines**: Display all search engine options in popup
+- **Notification Settings**: Show/hide notifications when auto-search triggers
+- **Domain Management**: 
+  - Whitelist: Always auto-search (overrides global setting)
+  - Blacklist: Never auto-search
+  - Bulk add/remove domains
+- **Settings Backup**: Export and import all settings as JSON
 
 ## Technical Details
 
@@ -198,13 +197,14 @@ For detailed documentation on the detection system, see [DETECTION_SYSTEM.md](do
 
 ### Permissions Used
 
-- `webNavigation`: To detect navigation events and errors
-- `webRequest`: To inspect HTTP response codes
-- `tabs`: To interact with browser tabs
-- `storage`: To save settings and error history
-- `activeTab`: To analyze current page content
-- `scripting`: To inject content analysis scripts
-- `notifications`: To show error notifications
+- **`<all_urls>` (host permission)**: Required for universal 404 detection across all websites
+  - Enables content script injection to detect soft 404s
+  - Allows webRequest API to monitor HTTP status codes
+- **`webNavigation`**: Detects navigation events and completion for proper timing
+- **`webRequest`**: Monitors HTTP response headers for true 404 status codes
+- **`tabs`**: Creates new tabs for search results and manages tab information
+- **`storage`**: Saves user preferences, domain lists, and error history locally
+- **`notifications`**: Shows optional notifications when auto-search is triggered
 
 ## Privacy
 
@@ -238,5 +238,6 @@ This project is licensed under the GPL-3.0 license - see the LICENSE file for de
 - Chrome Extensions documentation and examples
 - The web development community for testing and feedback
 - Contributors who have helped improve the extension
+- Open source contributors and testers
 - Warp.dev with Turbo Plan's agentic feature
 - Claude 4 Opus model's planning and development
