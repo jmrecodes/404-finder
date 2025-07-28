@@ -268,6 +268,11 @@ input:checked + .toggle-slider:before {
   color: var(--warning-color);
 }
 
+.domain-status.disabled {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
 /* Quick action buttons */
 .quick-actions {
   display: grid;

@@ -71,7 +71,11 @@ function checkDomainStatus(domain) {
   Promise.all([
     isDomainListed(domain, true),
     isDomainListed(domain, false),
-  ]).then(([isWhitelisted, isBlacklisted]) => {
+    chrome.storage.local.get(['enableAutoSearch'])
+  ]).then(([isWhitelisted, isBlacklisted, settings]) => {
+    // Reset classes
+    domainStatus.classList.remove('whitelisted', 'blacklisted');
+    
     if (isWhitelisted) {
       domainStatus.textContent = 'Whitelisted';
       whitelistBtn.textContent = 'Remove from Whitelist';
@@ -81,7 +85,10 @@ function checkDomainStatus(domain) {
       blacklistBtn.textContent = 'Remove from Blacklist';
       domainStatus.classList.add('blacklisted');
     } else {
-      domainStatus.textContent = 'Monitoring';
+      // Check if auto-search is enabled globally
+      const isAutoSearchEnabled = settings.enableAutoSearch !== false; // Default to true
+      domainStatus.textContent = isAutoSearchEnabled ? 'Monitoring' : 'Not monitoring';
+      domainStatus.classList.toggle('disabled', !isAutoSearchEnabled);
     }
   });
 }
