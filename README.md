@@ -1,6 +1,6 @@
 # 404 Finder: Auto-Search Redirector
 
-A powerful Chrome extension that automatically detects 404 errors and redirects to intelligent search results. Using advanced content analysis and smart keyword extraction, it helps you find the content you were looking for when pages go missing.
+A powerful Chrome extension that automatically detects 404 errors and redirects to relevant search results. It helps you find the content you were looking for when pages go missing by creating simple, effective search queries from the broken URL.
 
 ## 🚀 Key Features
 
@@ -13,7 +13,7 @@ A powerful Chrome extension that automatically detects 404 errors and redirects 
   - Ignores pages with substantial content (>500 words)
   - Detects both HTTP 404 and "soft" 404s
 - **🎯 Smart Auto-Redirect**: Automatically redirects to search results after a brief delay
-- **🧠 Intelligent Query Generation**: Creates relevant search queries using advanced keyword extraction
+- **🧠 Simple Query Generation**: Creates clean search queries directly from the URL
 - **🌐 Multi-Search Engine Support**: Choose from 10+ search engines including:
   - Google, Bing, DuckDuckGo, Yahoo, Yandex
   - Baidu, Startpage, Searx, Qwant, Ecosia
@@ -118,17 +118,17 @@ Beyond its practical functionality, the 404 Finder: Auto-Search Redirector exten
 
 ### Managing Domains
 
-- **Whitelist a Domain**: Always enable auto-search for this domain
+- **Whitelist a Domain**: Always enable auto-search for this domain, even if auto-search is globally disabled
 - **Blacklist a Domain**: Never auto-search on this domain (manual search still available)
-- **Default Behavior**: Auto-search is enabled for all unlisted domains
+- **Default Behavior**: Auto-search follows the global setting for unlisted domains
 
 ### Auto-Search Behavior
 
 1. **Detection**: The extension detects 404 errors (both HTTP status and soft 404s)
 2. **Notification**: A brief notification appears showing the redirect action
-3. **Smart Query Generation**: Creates search queries using:
-   - Domain name and keywords from the URL
-   - Page title (if available)
+3. **Simple Query Generation**: Creates clean search queries from:
+   - Domain name (without TLD)
+   - URL path components decoded and formatted
    - Customizable query templates
 4. **Redirect**: Automatically redirects to your preferred search engine
 

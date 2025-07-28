@@ -10,8 +10,6 @@
     "webRequest",
     "tabs",
     "storage",
-    "activeTab",
-    "scripting",
     "notifications"
   ],
   

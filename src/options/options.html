@@ -93,7 +93,7 @@
                     <input type="checkbox" id="enable-auto-search">
                     Enable auto-search for all domains
                 </label>
-                <p class="help-text">When enabled, automatically search for 404 pages on all domains. You can still use whitelist/blacklist to customize behavior.</p>
+                <p class="help-text">When enabled, automatically search for 404 pages on all domains (except blacklisted ones). Whitelisted domains will always auto-search regardless of this setting.</p>
             </div>
             
             <div class="setting-group">
@@ -113,7 +113,7 @@
             <!-- Whitelist Section -->
             <div class="domain-section">
                 <h3>Whitelist</h3>
-                <p class="help-text">Only track 404 errors on these domains. Leave empty to track all domains (except blacklisted ones).</p>
+                <p class="help-text">Always enable auto-search on these domains, even if auto-search is globally disabled. This ensures important domains are always monitored.</p>
                 
                 <div class="domain-input-group">
                     <input type="text" id="whitelist-input" class="form-control" placeholder="Enter domain (e.g., example.com or *.example.com)">

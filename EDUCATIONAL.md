@@ -234,8 +234,8 @@ const SEARCH_ENGINE_DOMAINS = [
 
 - **Chrome Extension Architecture**: Understand how service workers, content scripts, and popups communicate
 - **Advanced DOM Analysis**: Learn techniques for detecting soft 404s through content analysis
-- **Smart Text Processing**: Implement URL decoding, keyword extraction, and stop word filtering
+- **Simple Text Processing**: Implement URL decoding and direct query generation from URL components
 - **User Experience Design**: Create responsive, theme-aware interfaces
 - **Performance Optimization**: Handle large amounts of text processing efficiently
 
-By following this guide, you'll create a sophisticated Chrome extension that not only detects errors but provides intelligent solutions through smart query generation and seamless user experience.
+By following this guide, you'll create a sophisticated Chrome extension that not only detects errors but provides effective solutions through simple, predictable query generation and seamless user experience.

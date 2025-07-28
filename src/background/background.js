@@ -272,14 +272,10 @@ async function checkAutoSearchEligibility(domain, url) {
         // Determine if auto-search should be enabled
         let shouldAutoSearch = false;
         
-        // Only allow auto-search if globally enabled (default true)
-        if (settings.enableAutoSearch !== false) {
-            // Respect blacklist
-            if (isBlacklisted) {
-                shouldAutoSearch = false;
-            } else {
-                shouldAutoSearch = true;
-            }
+        // Whitelist overrides global settings - always auto-search on whitelisted domains
+        if (isWhitelisted || settings.enableAutoSearch !== false) {
+            // For non-whitelisted domains, respect global setting (default true)
+            shouldAutoSearch = true;
         }
 
         if (!shouldAutoSearch) {
