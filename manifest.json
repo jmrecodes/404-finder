@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "404 Finder",
+  "name": "404 Finder: Auto-Search Redirector",
   "version": "1.0.0",
-  "description": "Automatically detect and track 404 errors while browsing the web",
+  "description": "Automatically find and redirect broken pages to relevant search results using customizable search engines and domain filters.",
   "author": "Your Name",
   
   "permissions": [
